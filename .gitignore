@@ -9,6 +9,7 @@ vendor/
 # Writable directories (logs, sessions, cache, uploads)
 writable/*
 !writable/.gitkeep
+public/null/
 
 # IDE & Editor
 .vscode/
