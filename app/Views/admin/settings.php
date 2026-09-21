@@ -5,7 +5,7 @@
 <div class="card rounded-lg p-6 max-w-3xl">
     <h3 class="text-lg font-semibold mb-6">Pengaturan Perusahaan</h3>
 
-    <form method="POST" action="/admin/settings">
+    <form method="POST" action="/admin/settings" enctype="multipart/form-data">
         <?= csrf_field() ?>
         <div class="space-y-4">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -90,11 +90,17 @@
                 <label class="block text-sm text-gray-400 mb-1">Gambar QRIS Statis</label>
                 <?php if (!empty($settings['qris_image'])): ?>
                     <div class="mb-2">
-                        <img src="<?= esc($settings['qris_image']) ?>" alt="QRIS" class="w-32 h-32 rounded-lg border border-white/10">
+                        <img src="<?= esc($settings['qris_image']) ?>" alt="QRIS" class="w-32 h-32 rounded-lg border border-white/10 object-contain bg-white p-1">
                     </div>
                 <?php endif; ?>
-                <input type="text" name="qris_image" value="<?= esc($settings['qris_image'] ?? '') ?>" class="input-field w-full px-4 py-2.5 rounded-lg text-white" placeholder="URL gambar QRIS (https://...)">
-                <p class="text-xs text-gray-500 mt-1">Upload gambar QRIS ke hosting lalu paste URL-nya, atau gunakan URL dari bank</p>
+                <input type="file" name="qris_image_file" accept="image/*" class="input-field w-full px-4 py-2.5 rounded-lg text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-primary/20 file:text-primary file:font-medium file:text-sm hover:file:bg-primary/30">
+                <p class="text-xs text-gray-500 mt-1">Format: JPG, PNG, SVG. Maks 2MB</p>
+                <?php if (!empty($settings['qris_image'])): ?>
+                    <label class="flex items-center gap-2 mt-2">
+                        <input type="checkbox" name="qris_image_delete" value="1" class="rounded">
+                        <span class="text-xs text-red-400">Hapus gambar QRIS</span>
+                    </label>
+                <?php endif; ?>
             </div>
         </div>
 
