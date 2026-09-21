@@ -1,0 +1,43 @@
+# Environment & Secrets
+.env
+.env.*
+!.env.example
+
+# Vendor & Dependencies
+vendor/
+
+# Writable directories (logs, sessions, cache, uploads)
+writable/*
+!writable/.gitkeep
+
+# IDE & Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# PHPUnit
+phpunit.xml
+.phpunit.result.cache
+.phpunit.cache/
+
+# Composer
+composer.phar
+
+# Debug toolbar
+writable/debugbar/
+
+# OS files
+Desktop.ini
+*.lnk
+
+# Build artifacts
+node_modules/
+npm-debug.log
+
+# Database backups
+*.sql
+*.sql.gz
