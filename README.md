@@ -113,6 +113,21 @@ Atau konfigurasi web server untuk pointing ke folder `public/`.
 | `features` | Fitur landing page |
 | `how_it_steps` | Langkah cara kerja |
 
+## Dukungan
+
+Jika proyek ini bermanfaat, kamu bisa mendukung pengembangannya melalui QRIS:
+
+<p align="center">
+  <img src="public/assets/img/qris.png" alt="QRIS Dukungan" width="250">
+</p>
+
+<p align="center">
+  <b>FRCHN - DIGITAL PAYMENT</b><br>
+  NMID: ID1025446232395
+</p>
+
+---
+
 ## License
 
 MIT
