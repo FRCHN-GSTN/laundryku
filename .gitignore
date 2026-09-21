@@ -3,6 +3,9 @@
 .env.*
 !.env.example
 
+# AI Agent config
+.opencode/
+
 # Vendor & Dependencies
 vendor/
 
