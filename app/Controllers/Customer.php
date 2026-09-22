@@ -5,6 +5,8 @@ namespace App\Controllers;
 use App\Models\OrderModel;
 use App\Models\OrderItemModel;
 use App\Models\ServiceModel;
+use App\Models\PromotionsModel;
+use App\Models\PaymentModel;
 
 class Customer extends BaseController
 {
@@ -49,6 +51,7 @@ class Customer extends BaseController
         $deliveryType = $this->request->getPost('delivery_type');
         $deliveryAddress = $this->request->getPost('delivery_address');
         $notes = $this->request->getPost('notes');
+        $promoCode = trim($this->request->getPost('promo_code') ?? '');
 
         if (empty($services) || !is_array($services)) {
             return redirect()->back()->withInput()->with('error', 'Pilih minimal satu layanan');
@@ -86,11 +89,32 @@ class Customer extends BaseController
             return redirect()->back()->withInput()->with('error', 'Total harga harus lebih dari 0');
         }
 
+        // Apply promo code
+        $discountAmount = 0;
+        $promoId = null;
+        $finalPrice = $totalPrice;
+
+        if (!empty($promoCode)) {
+            $promoModel = new PromotionsModel();
+            $promoResult = $promoModel->validateCode($promoCode, $totalPrice);
+
+            if ($promoResult['valid']) {
+                $discountAmount = $promoResult['discount'];
+                $promoId = $promoResult['promo']['id'];
+                $finalPrice = $totalPrice - $discountAmount;
+            } else {
+                return redirect()->back()->withInput()->with('error', $promoResult['message']);
+            }
+        }
+
         $orderData = [
             'order_code' => $this->orderModel->generateOrderCode(),
             'user_id' => $userId,
             'total_weight' => $totalWeight > 0 ? $totalWeight : null,
             'total_price' => $totalPrice,
+            'discount_amount' => $discountAmount,
+            'final_price' => $finalPrice,
+            'promo_id' => $promoId,
             'delivery_type' => $deliveryType,
             'delivery_address' => $deliveryType === 'delivery' ? $deliveryAddress : null,
             'notes' => $notes,
@@ -104,6 +128,11 @@ class Customer extends BaseController
                 $item['order_id'] = $orderId;
             }
             $this->orderItemModel->insertBatch($orderItems);
+
+            // Increment promo usage
+            if ($promoId) {
+                $promoModel->incrementUsage($promoId);
+            }
 
             return redirect()->to('/customer/orders/' . $orderId)->with('success', 'Pesanan berhasil dibuat!');
         }
@@ -192,5 +221,56 @@ class Customer extends BaseController
         session()->set('user_name', $userData['name']);
 
         return redirect()->to('/customer/profile')->with('success', 'Profil berhasil diupdate');
+    }
+
+    public function uploadPaymentProof($orderId)
+    {
+        $userId = session()->get('user_id');
+        $order = $this->orderModel->where('id', $orderId)->where('user_id', $userId)->first();
+
+        if (!$order) {
+            return redirect()->back()->with('error', 'Pesanan tidak ditemukan');
+        }
+
+        $proofFile = $this->request->getFile('proof_image');
+
+        if (!$proofFile || !$proofFile->isValid() || $proofFile->hasMoved()) {
+            return redirect()->back()->with('error', 'File bukti pembayaran tidak valid');
+        }
+
+        $allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+        if (!in_array($proofFile->getMimeType(), $allowedTypes)) {
+            return redirect()->back()->with('error', 'Format file harus JPG, PNG, atau WebP');
+        }
+
+        if ($proofFile->getSize() > 5 * 1024 * 1024) {
+            return redirect()->back()->with('error', 'Ukuran file maksimal 5MB');
+        }
+
+        $uploadPath = FCPATH . 'uploads/proofs';
+        if (!is_dir($uploadPath)) {
+            mkdir($uploadPath, 0755, true);
+        }
+
+        $newName = 'proof_' . $orderId . '_' . time() . '.' . $proofFile->getExtension();
+        $proofFile->move($uploadPath, $newName);
+
+        $paymentModel = new PaymentModel();
+        $payment = $paymentModel->getPaymentByOrder($orderId);
+
+        if ($payment) {
+            $paymentModel->update($payment['id'], ['proof_image' => '/uploads/proofs/' . $newName]);
+        } else {
+            $paymentModel->insert([
+                'order_id' => $orderId,
+                'amount' => $order['confirmed_price'] ?? $order['total_price'],
+                'payment_method' => 'transfer',
+                'payment_date' => date('Y-m-d H:i:s'),
+                'status' => 'pending',
+                'proof_image' => '/uploads/proofs/' . $newName,
+            ]);
+        }
+
+        return redirect()->to('/customer/orders/' . $orderId)->with('success', 'Bukti pembayaran berhasil diupload');
     }
 }

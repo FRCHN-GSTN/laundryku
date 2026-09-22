@@ -588,6 +588,39 @@
 </section>
 
 <!-- ========================================================================= -->
+<!-- 6.5 PROMO BANNER -->
+<!-- ========================================================================= -->
+<?php if (!empty($hero_promo)): ?>
+<section class="py-16 relative" id="promo">
+    <div class="max-w-4xl mx-auto px-margin-mobile md:px-margin">
+        <div class="rounded-3xl bg-gradient-to-r from-[#865DFF]/20 to-[#E384FF]/20 border border-[#865DFF]/40 p-8 md:p-12 text-center relative overflow-hidden">
+            <div class="absolute -left-16 -top-16 w-48 h-48 bg-[#FFA3FD]/10 rounded-full blur-2xl pointer-events-none"></div>
+            <span class="px-3 py-1 rounded-full bg-[#FFA3FD]/10 border border-[#FFA3FD]/30 text-[#FFA3FD] font-label-caps text-label-caps">
+                PROMO TERBATAS
+            </span>
+            <h2 class="text-headline-xl-mobile md:text-headline-xl font-headline-xl-mobile md:font-headline-xl text-on-surface mt-3 mb-2">
+                <?= esc($hero_promo['title']) ?>
+            </h2>
+            <?php if (!empty($hero_promo['description'])): ?>
+                <p class="text-on-surface-variant font-body-md text-body-md mb-4 max-w-lg mx-auto">
+                    <?= esc($hero_promo['description']) ?>
+                </p>
+            <?php endif; ?>
+            <?php if (!empty($hero_promo['promo_code'])): ?>
+                <div class="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#865DFF]/30 border border-[#865DFF]/50 mt-2">
+                    <span class="text-[#E384FF] font-label-lg text-label-lg">Gunakan kode:</span>
+                    <span class="text-white font-mono font-bold text-lg tracking-wider"><?= esc($hero_promo['promo_code']) ?></span>
+                </div>
+            <?php endif; ?>
+            <p class="text-outline font-label-sm text-label-sm mt-4">
+                Berlaku hingga <?= date('d M Y', strtotime($hero_promo['end_date'])) ?>
+            </p>
+        </div>
+    </div>
+</section>
+<?php endif; ?>
+
+<!-- ========================================================================= -->
 <!-- 7. SIMULASI LACAK PESANAN -->
 <!-- ========================================================================= -->
 <section class="py-20 bg-[#13121f] border-t border-outline-variant/20 relative" id="lacak-pesanan">

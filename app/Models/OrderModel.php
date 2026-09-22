@@ -15,6 +15,7 @@ class OrderModel extends Model
         'order_code', 'user_id', 'total_weight', 'total_price',
         'delivery_type', 'delivery_address', 'notes', 'status',
         'estimated_date', 'confirmed_weight', 'confirmed_price', 'admin_notes',
+        'promo_id', 'discount_amount', 'final_price',
     ];
 
     protected $useTimestamps = true;
@@ -208,5 +209,46 @@ class OrderModel extends Model
             'processing'  => (int) ($result['processing'] ?? 0),
             'completed'   => (int) ($result['completed'] ?? 0),
         ];
+    }
+
+    /**
+     * Get daily revenue for chart (last 30 days)
+     */
+    public function getRevenueChart(int $days = 30): array
+    {
+        $builder = $this->db->table('orders');
+        $builder->select('DATE(created_at) as date, SUM(total_price) as revenue, COUNT(*) as orders');
+        $builder->where('status', 'completed');
+        $builder->where('created_at >=', date('Y-m-d', strtotime("-{$days} days")));
+        $builder->groupBy('DATE(created_at)');
+        $builder->orderBy('date', 'ASC');
+        return $builder->get()->getResultArray();
+    }
+
+    /**
+     * Get monthly revenue summary
+     */
+    public function getMonthlyRevenue(int $months = 12): array
+    {
+        $builder = $this->db->table('orders');
+        $builder->select('DATE_FORMAT(created_at, "%Y-%m") as month, SUM(total_price) as revenue, COUNT(*) as orders');
+        $builder->where('status', 'completed');
+        $builder->where('created_at >=', date('Y-m-01', strtotime("-{$months} months")));
+        $builder->groupBy('DATE_FORMAT(created_at, "%Y-%m")');
+        $builder->orderBy('month', 'ASC');
+        return $builder->get()->getResultArray();
+    }
+
+    /**
+     * Get orders for CSV export
+     */
+    public function getOrdersForExport(string $startDate, string $endDate): array
+    {
+        return $this->select('orders.*, users.name as user_name, users.phone as user_phone, users.email as user_email')
+                     ->join('users', 'users.id = orders.user_id')
+                     ->where('DATE(orders.created_at) >=', $startDate)
+                     ->where('DATE(orders.created_at) <=', $endDate)
+                     ->orderBy('orders.created_at', 'ASC')
+                     ->findAll();
     }
 }

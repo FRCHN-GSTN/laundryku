@@ -11,7 +11,7 @@ class ServiceModel extends Model
     protected $useAutoIncrement = true;
     protected $returnType = 'array';
     protected $useSoftDeletes = false;
-    protected $allowedFields = ['name', 'description', 'price', 'unit', 'category', 'is_active'];
+    protected $allowedFields = ['name', 'description', 'price', 'unit', 'category', 'is_active', 'image'];
 
     protected $useTimestamps = true;
     protected $createdField = 'created_at';

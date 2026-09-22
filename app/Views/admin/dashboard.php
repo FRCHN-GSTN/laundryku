@@ -32,36 +32,52 @@
     </div>
 </div>
 
+<!-- Revenue Chart -->
 <div class="card rounded-lg p-6 mb-8">
-    <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg font-semibold">Pesanan Menunggu Konfirmasi</h3>
-        <a href="/admin/orders?status=pending" class="text-primary text-sm hover:underline">Lihat Semua</a>
+    <h3 class="text-lg font-semibold mb-4">Pendapatan 7 Hari Terakhir</h3>
+    <div class="relative" style="height: 250px;">
+        <canvas id="revenueChart"></canvas>
     </div>
+</div>
 
-    <?php if (empty($pendingOrders)): ?>
-        <div class="text-center py-8 text-gray-400">
-            <p>Tidak ada pesanan baru</p>
+<!-- Status Distribution -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+    <div class="card rounded-lg p-6">
+        <h3 class="text-lg font-semibold mb-4">Distribusi Status Pesanan</h3>
+        <div class="relative" style="height: 200px;">
+            <canvas id="statusChart"></canvas>
         </div>
-    <?php else: ?>
-        <div class="space-y-3">
-            <?php foreach ($pendingOrders as $order): ?>
-                <div class="flex items-center justify-between p-4 rounded-lg bg-white/5">
-                    <div class="flex items-center">
-                        <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mr-4">
-                            <span class="text-primary font-semibold text-sm"><?= esc(substr($order['order_code'], -4)) ?></span>
+    </div>
+    <div class="card rounded-lg p-6">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-semibold">Pesanan Menunggu Konfirmasi</h3>
+            <a href="/admin/orders?status=pending" class="text-primary text-sm hover:underline">Lihat Semua</a>
+        </div>
+        <?php if (empty($pendingOrders)): ?>
+            <div class="text-center py-8 text-gray-400">
+                <p>Tidak ada pesanan baru</p>
+            </div>
+        <?php else: ?>
+            <div class="space-y-3">
+                <?php foreach (array_slice($pendingOrders, 0, 5) as $order): ?>
+                    <div class="flex items-center justify-between p-4 rounded-lg bg-white/5">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mr-4">
+                                <span class="text-primary font-semibold text-sm"><?= esc(substr($order['order_code'], -4)) ?></span>
+                            </div>
+                            <div>
+                                <p class="font-medium"><?= esc($order['order_code']) ?></p>
+                                <p class="text-sm text-gray-400">Rp <?= number_format($order['total_price'], 0, ',', '.') ?></p>
+                            </div>
                         </div>
-                        <div>
-                            <p class="font-medium"><?= esc($order['order_code']) ?></p>
-                            <p class="text-sm text-gray-400">Rp <?= number_format($order['total_price'], 0, ',', '.') ?></p>
-                        </div>
+                        <a href="/admin/orders/<?= $order['id'] ?>" class="btn-primary px-4 py-2 rounded-lg text-sm font-medium text-white">
+                            Proses
+                        </a>
                     </div>
-                    <a href="/admin/orders/<?= $order['id'] ?>" class="btn-primary px-4 py-2 rounded-lg text-sm font-medium text-white">
-                        Proses
-                    </a>
-                </div>
-            <?php endforeach; ?>
-        </div>
-    <?php endif; ?>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+    </div>
 </div>
 
 <div class="card rounded-lg p-6">
@@ -133,5 +149,66 @@
         </div>
     <?php endif; ?>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+fetch('/api/chart/revenue')
+    .then(r => r.json())
+    .then(data => {
+        const ctx = document.getElementById('revenueChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    label: 'Pendapatan',
+                    data: data.values,
+                    backgroundColor: 'rgba(134, 93, 255, 0.5)',
+                    borderColor: '#865DFF',
+                    borderWidth: 1,
+                    borderRadius: 6,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { color: '#9ca3af', callback: v => 'Rp ' + v.toLocaleString('id-ID') },
+                        grid: { color: 'rgba(255,255,255,0.05)' }
+                    },
+                    x: {
+                        ticks: { color: '#9ca3af' },
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+    });
+
+fetch('/api/chart/status')
+    .then(r => r.json())
+    .then(data => {
+        const ctx = document.getElementById('statusChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    data: data.values,
+                    backgroundColor: ['#6b7280', '#865DFF', '#3b82f6', '#f59e0b', '#22c55e', '#ef4444'],
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'right', labels: { color: '#9ca3af', boxWidth: 12, padding: 10 } } },
+                cutout: '60%',
+            }
+        });
+    });
+</script>
 
 <?= $this->endSection() ?>

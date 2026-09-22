@@ -39,8 +39,18 @@
     </div>
 </div>
 
-<div class="card rounded-lg p-6">
-    <h3 class="text-lg font-semibold mb-4">Detail Pesanan Selesai</h3>
+<div class="card rounded-lg p-6 mb-6">
+    <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold">Detail Pesanan Selesai</h3>
+        <a href="/admin/export/orders?start_date=<?= esc($startDate, 'attr') ?>&end_date=<?= esc($endDate, 'attr') ?>"
+           class="px-4 py-2 rounded-lg text-sm font-semibold text-white border border-white/20 hover:bg-white/10 transition-all inline-flex items-center gap-2"
+           target="_blank">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            </svg>
+            Export CSV
+        </a>
+    </div>
 
     <?php if (empty($orders)): ?>
         <div class="text-center py-12 text-gray-400">

@@ -193,6 +193,17 @@ class Admin extends BaseController
                 'is_active' => true,
             ];
 
+            $imageFile = $this->request->getFile('image');
+            if ($imageFile && $imageFile->isValid() && !$imageFile->hasMoved()) {
+                $uploadPath = FCPATH . 'uploads/services';
+                if (!is_dir($uploadPath)) {
+                    mkdir($uploadPath, 0755, true);
+                }
+                $newName = 'service_' . time() . '.' . $imageFile->getExtension();
+                $imageFile->move($uploadPath, $newName);
+                $serviceData['image'] = '/uploads/services/' . $newName;
+            }
+
             $this->serviceModel->insert($serviceData);
 
             return redirect()->to('/admin/services')->with('success', 'Layanan berhasil ditambahkan');
@@ -227,6 +238,17 @@ class Admin extends BaseController
                 'unit' => $this->request->getPost('unit'),
                 'is_active' => $this->request->getPost('is_active') === '1',
             ];
+
+            $imageFile = $this->request->getFile('image');
+            if ($imageFile && $imageFile->isValid() && !$imageFile->hasMoved()) {
+                $uploadPath = FCPATH . 'uploads/services';
+                if (!is_dir($uploadPath)) {
+                    mkdir($uploadPath, 0755, true);
+                }
+                $newName = 'service_' . time() . '.' . $imageFile->getExtension();
+                $imageFile->move($uploadPath, $newName);
+                $serviceData['image'] = '/uploads/services/' . $newName;
+            }
 
             $this->serviceModel->update($serviceId, $serviceData);
 
@@ -295,5 +317,30 @@ class Admin extends BaseController
         ];
 
         return view('admin/reports', $data);
+    }
+
+    public function revenueChart()
+    {
+        $data = $this->orderModel->getRevenueChart();
+        return $this->response->setJSON($data);
+    }
+
+    public function statusChart()
+    {
+        $result = $this->orderModel->select('status, COUNT(*) as count')
+                                   ->where('status !=', 'cancelled')
+                                   ->groupBy('status')
+                                   ->findAll();
+
+        $labels = [];
+        $values = [];
+        $statusLabels = \App\Models\OrderModel::$statusLabels;
+
+        foreach ($result as $row) {
+            $labels[] = $statusLabels[$row['status']] ?? $row['status'];
+            $values[] = (int) $row['count'];
+        }
+
+        return $this->response->setJSON(['labels' => $labels, 'values' => $values]);
     }
 }

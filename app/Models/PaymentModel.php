@@ -11,7 +11,7 @@ class PaymentModel extends Model
     protected $useAutoIncrement = true;
     protected $returnType = 'array';
     protected $useSoftDeletes = false;
-    protected $allowedFields = ['order_id', 'amount', 'payment_method', 'payment_date', 'status'];
+    protected $allowedFields = ['order_id', 'amount', 'payment_method', 'payment_date', 'status', 'proof_image'];
 
     protected $useTimestamps = true;
     protected $createdField = 'created_at';

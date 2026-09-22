@@ -14,6 +14,13 @@ $routes->get('/auth/register', 'Auth::register');
 $routes->post('/auth/register', 'Auth::register', ['filter' => 'throttle']);
 $routes->post('/auth/logout', 'Auth::logout');
 
+// Public tracking
+$routes->get('/track', 'Track::index');
+$routes->post('/track', 'Track::lookup');
+
+// API
+$routes->post('/api/promo/validate', 'ApiPromo::validate');
+
 // Customer routes - requires login
 $routes->group('customer', ['filter' => 'auth'], function ($routes) {
     $routes->get('dashboard', 'Customer::dashboard');
@@ -22,9 +29,15 @@ $routes->group('customer', ['filter' => 'auth'], function ($routes) {
     $routes->get('orders', 'Customer::orders');
     $routes->get('orders/(:num)', 'Customer::orderDetail/$1');
     $routes->post('orders/(:num)/cancel', 'Customer::cancelOrder/$1');
+    $routes->post('orders/(:num)/proof', 'Customer::uploadPaymentProof/$1');
+    $routes->post('orders/(:num)/rate', 'CustomerRating::rate/$1');
+    $routes->get('orders/(:num)/rate', 'CustomerRating::rate/$1');
     $routes->get('profile', 'Customer::profile');
     $routes->post('profile/update', 'Customer::updateProfile');
 });
+
+// Invoice (accessible by order owner or admin)
+$routes->get('invoice/(:num)', 'Invoice::print/$1');
 
 // Admin routes - requires login + admin role
 $routes->group('admin', ['filter' => 'auth'], function ($routes) {
@@ -43,6 +56,7 @@ $routes->group('admin', ['filter' => 'auth'], function ($routes) {
     $routes->get('customers', 'Admin::customers');
     $routes->get('customers/(:num)', 'Admin::customerDetail/$1');
     $routes->get('reports', 'Admin::reports');
+    $routes->get('export/orders', 'AdminExport::orders');
 
     // Promotions
     $routes->get('promotions', 'AdminPromotions::index');
@@ -63,6 +77,10 @@ $routes->group('admin', ['filter' => 'auth'], function ($routes) {
     // Settings
     $routes->get('settings', 'AdminSettings::index');
     $routes->post('settings', 'AdminSettings::update');
+
+    // Chart APIs
+    $routes->get('chart/revenue', 'Admin::revenueChart');
+    $routes->get('chart/status', 'Admin::statusChart');
 
     // Payments
     $routes->get('orders/(:num)/payment', 'AdminPayment::showPayment/$1');

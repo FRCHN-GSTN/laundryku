@@ -18,7 +18,7 @@
             </div>
         <?php endif; ?>
 
-        <form action="<?= isset($service) ? '/admin/services/' . $service['id'] . '/edit' : '/admin/services/create' ?>" method="POST">
+        <form action="<?= isset($service) ? '/admin/services/' . $service['id'] . '/edit' : '/admin/services/create' ?>" method="POST" enctype="multipart/form-data">
             <?= csrf_field() ?>
             <div class="mb-4">
                 <label class="block text-sm font-medium text-gray-300 mb-2">Nama Layanan</label>
@@ -32,6 +32,18 @@
                 <textarea name="description" rows="3"
                           class="input-field w-full px-4 py-3 rounded-lg text-white placeholder-gray-500"
                           placeholder="Deskripsi layanan (opsional)"><?= esc($service['description'] ?? old('description')) ?></textarea>
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-300 mb-2">Foto Layanan</label>
+                <?php if (isset($service) && !empty($service['image'])): ?>
+                    <div class="mb-2">
+                        <img src="<?= esc($service['image']) ?>" alt="Foto layanan" class="w-24 h-24 object-cover rounded-lg">
+                    </div>
+                <?php endif; ?>
+                <input type="file" name="image" accept="image/jpeg,image/png,image/webp"
+                       class="input-field w-full px-4 py-3 rounded-lg text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-primary/80">
+                <p class="text-xs text-gray-500 mt-1">Format: JPG, PNG, WebP. Maks 2MB.</p>
             </div>
 
             <div class="grid grid-cols-2 gap-4 mb-4">

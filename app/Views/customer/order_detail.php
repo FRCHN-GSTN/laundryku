@@ -127,20 +127,83 @@
             <?php endforeach; ?>
         </div>
         <div class="mt-4 pt-4 border-t border-white/10">
-            <div class="flex justify-between items-center">
-                <span class="text-lg font-semibold">Total Bayar</span>
-                <span class="text-2xl font-bold text-primary">
-                    Rp <?= number_format($order['confirmed_price'] ?? $order['total_price'], 0, ',', '.') ?>
-                </span>
-            </div>
-            <?php if ($order['confirmed_price'] && $order['confirmed_price'] != $order['total_price']): ?>
-                <div class="flex justify-between text-sm mt-1">
-                    <span class="text-gray-500">Estimasi awal</span>
-                    <span class="text-gray-500 line-through">Rp <?= number_format($order['total_price'], 0, ',', '.') ?></span>
+            <div class="space-y-2">
+                <div class="flex justify-between text-sm">
+                    <span class="text-gray-400">Subtotal</span>
+                    <span>Rp <?= number_format($order['total_price'], 0, ',', '.') ?></span>
                 </div>
-            <?php endif; ?>
+                <?php if (($order['discount_amount'] ?? 0) > 0): ?>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-green-400">Diskon</span>
+                        <span class="text-green-400">- Rp <?= number_format($order['discount_amount'], 0, ',', '.') ?></span>
+                    </div>
+                <?php endif; ?>
+                <div class="flex justify-between items-center border-t border-white/10 pt-2">
+                    <span class="text-lg font-semibold">Total Bayar</span>
+                    <span class="text-2xl font-bold text-primary">
+                        Rp <?= number_format($order['confirmed_price'] ?? $order['final_price'] ?? $order['total_price'], 0, ',', '.') ?>
+                    </span>
+                </div>
+                <?php if ($order['confirmed_price'] && $order['confirmed_price'] != $order['total_price']): ?>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-500">Estimasi awal</span>
+                        <span class="text-gray-500 line-through">Rp <?= number_format($order['total_price'], 0, ',', '.') ?></span>
+                    </div>
+                <?php endif; ?>
+            </div>
         </div>
     </div>
+
+    <!-- Invoice -->
+    <?php if (in_array($order['status'], ['confirmed', 'washing', 'drying', 'ironing', 'ready', 'delivered', 'completed'])): ?>
+        <div class="card rounded-lg p-6 mb-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h4 class="font-semibold">Invoice</h4>
+                    <p class="text-sm text-gray-400">Cetak bukti pemesanan</p>
+                </div>
+                <a href="/invoice/<?= $order['id'] ?>" target="_blank"
+                   class="px-4 py-2 rounded-lg text-sm font-semibold text-white border border-white/20 hover:bg-white/10 transition-all">
+                    Cetak Invoice
+                </a>
+            </div>
+        </div>
+    <?php endif; ?>
+
+    <!-- Payment Proof Upload -->
+    <?php if (in_array($order['status'], ['pending', 'confirmed']) && ($order['delivery_type'] === 'delivery')): ?>
+        <div class="card rounded-lg p-6 mb-6">
+            <h4 class="font-semibold mb-3">Upload Bukti Pembayaran</h4>
+            <p class="text-sm text-gray-400 mb-4">Upload bukti transfer/QRIS setelah melakukan pembayaran</p>
+            <form action="/customer/orders/<?= $order['id'] ?>/proof" method="POST" enctype="multipart/form-data">
+                <?= csrf_field() ?>
+                <div class="mb-4">
+                    <input type="file" name="proof_image" accept="image/jpeg,image/png,image/webp" required
+                           class="input-field w-full px-4 py-3 rounded-lg text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-primary/80">
+                    <p class="text-xs text-gray-500 mt-1">Format: JPG, PNG, WebP. Maks 5MB.</p>
+                </div>
+                <button type="submit" class="px-4 py-2 rounded-lg text-sm font-semibold text-white btn-primary">
+                    Upload Bukti
+                </button>
+            </form>
+        </div>
+    <?php endif; ?>
+
+    <!-- Rating -->
+    <?php if ($order['status'] === 'completed'): ?>
+        <div class="card rounded-lg p-6 mb-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h4 class="font-semibold">Beri Penilaian</h4>
+                    <p class="text-sm text-gray-400">Bagaimana pengalaman Anda?</p>
+                </div>
+                <a href="/customer/orders/<?= $order['id'] ?>/rate"
+                   class="px-4 py-2 rounded-lg text-sm font-semibold text-white btn-primary">
+                    Beri Rating
+                </a>
+            </div>
+        </div>
+    <?php endif; ?>
 
     <!-- Status History -->
     <?php if (!empty($statusHistory)): ?>

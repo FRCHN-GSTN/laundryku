@@ -80,10 +80,35 @@
                           placeholder="Contoh: ada noda di baju"></textarea>
             </div>
 
+            <div class="mb-8">
+                <h3 class="text-lg font-semibold mb-4">Kode Promo</h3>
+                <div class="flex gap-2">
+                    <input type="text" name="promo_code" id="promoCode"
+                           class="input-field flex-1 px-4 py-3 rounded-lg text-white placeholder-gray-500"
+                           placeholder="Masukkan kode promo (opsional)">
+                    <button type="button" onclick="validatePromo()" id="promoBtn"
+                            class="px-6 py-3 rounded-lg font-semibold text-white border border-white/20 hover:bg-white/10 transition-all">
+                        Cek
+                    </button>
+                </div>
+                <div id="promoMessage" class="mt-2 text-sm hidden"></div>
+                <input type="hidden" name="discount_amount" id="discountAmount" value="0">
+            </div>
+
             <div class="card rounded-lg p-4 mb-6">
-                <div class="flex justify-between items-center">
-                    <span class="text-lg">Total Bayar:</span>
-                    <span id="totalPrice" class="text-2xl font-bold text-primary">Rp 0</span>
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-400">Subtotal</span>
+                        <span id="subtotalDisplay" class="font-medium">Rp 0</span>
+                    </div>
+                    <div id="discountRow" class="flex justify-between items-center hidden">
+                        <span class="text-green-400">Diskon</span>
+                        <span id="discountDisplay" class="font-medium text-green-400">- Rp 0</span>
+                    </div>
+                    <div class="flex justify-between items-center border-t border-white/10 pt-2">
+                        <span class="text-lg font-semibold">Total Bayar</span>
+                        <span id="totalPrice" class="text-2xl font-bold text-primary">Rp 0</span>
+                    </div>
                 </div>
             </div>
 
@@ -114,7 +139,11 @@ function updateTotal() {
         }
     });
 
-    document.getElementById('totalPrice').textContent = 'Rp ' + total.toLocaleString('id-ID');
+    document.getElementById('subtotalDisplay').textContent = 'Rp ' + total.toLocaleString('id-ID');
+
+    const discount = parseFloat(document.getElementById('discountAmount').value) || 0;
+    const finalTotal = Math.max(0, total - discount);
+    document.getElementById('totalPrice').textContent = 'Rp ' + finalTotal.toLocaleString('id-ID');
 }
 
 function toggleDelivery() {
@@ -126,6 +155,59 @@ function toggleDelivery() {
     } else {
         addressField.classList.add('hidden');
     }
+}
+
+function validatePromo() {
+    const code = document.getElementById('promoCode').value.trim();
+    if (!code) return;
+
+    let total = 0;
+    document.querySelectorAll('input[name="services[]"]').forEach(checkbox => {
+        if (checkbox.checked) {
+            const serviceId = checkbox.value;
+            const quantityInput = document.querySelector(`input[name="quantities[${serviceId}]"]`);
+            const price = parseFloat(quantityInput.dataset.price);
+            const quantity = parseFloat(quantityInput.value) || 0;
+            total += price * quantity;
+        }
+    });
+
+    const msgEl = document.getElementById('promoMessage');
+    const discountRow = document.getElementById('discountRow');
+    const discountDisplay = document.getElementById('discountDisplay');
+    const discountAmount = document.getElementById('discountAmount');
+
+    fetch('/api/promo/validate', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': document.querySelector('input[name="csrf_token"]').value
+        },
+        body: `promo_code=${encodeURIComponent(code)}&order_total=${total}`
+    })
+    .then(r => r.json())
+    .then(data => {
+        msgEl.classList.remove('hidden');
+        if (data.valid) {
+            msgEl.className = 'mt-2 text-sm text-green-400';
+            msgEl.textContent = data.message;
+            discountAmount.value = data.discount;
+            discountRow.classList.remove('hidden');
+            discountDisplay.textContent = '- Rp ' + data.discount.toLocaleString('id-ID');
+        } else {
+            msgEl.className = 'mt-2 text-sm text-red-400';
+            msgEl.textContent = data.message;
+            discountAmount.value = 0;
+            discountRow.classList.add('hidden');
+        }
+        updateTotal();
+    })
+    .catch(() => {
+        msgEl.className = 'mt-2 text-sm text-red-400';
+        msgEl.textContent = 'Gagal memvalidasi promo';
+        msgEl.classList.remove('hidden');
+    });
 }
 </script>
 
