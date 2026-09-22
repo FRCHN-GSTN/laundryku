@@ -9,16 +9,16 @@ $routes->get('/', 'Landing::index');
 
 // Auth routes
 $routes->get('/auth/login', 'Auth::login');
-$routes->post('/auth/attempt', 'Auth::attempt');
+$routes->post('/auth/attempt', 'Auth::attempt', ['filter' => 'throttle']);
 $routes->get('/auth/register', 'Auth::register');
-$routes->post('/auth/register', 'Auth::register');
+$routes->post('/auth/register', 'Auth::register', ['filter' => 'throttle']);
 $routes->post('/auth/logout', 'Auth::logout');
 
 // Customer routes - requires login
 $routes->group('customer', ['filter' => 'auth'], function ($routes) {
     $routes->get('dashboard', 'Customer::dashboard');
     $routes->get('order/new', 'Customer::newOrder');
-    $routes->post('order/create', 'Customer::createOrder');
+    $routes->post('order/create', 'Customer::createOrder', ['filter' => ['auth', 'throttle']]);
     $routes->get('orders', 'Customer::orders');
     $routes->get('orders/(:num)', 'Customer::orderDetail/$1');
     $routes->post('orders/(:num)/cancel', 'Customer::cancelOrder/$1');
