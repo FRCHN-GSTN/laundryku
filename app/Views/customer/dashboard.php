@@ -5,15 +5,15 @@
 <div class="grid grid-cols-3 gap-4 mb-8">
     <div class="card rounded-lg p-4">
         <p class="text-gray-400 text-xs mb-1">Total Pesanan</p>
-        <p class="text-2xl font-bold text-primary"><?= $stats['total_today'] ?? 0 ?></p>
+        <p class="text-2xl font-bold text-primary"><?= esc($stats['total_today'] ?? 0) ?></p>
     </div>
     <div class="card rounded-lg p-4">
         <p class="text-gray-400 text-xs mb-1">Sedang Diproses</p>
-        <p class="text-2xl font-bold text-blue-400"><?= $stats['processing'] ?? 0 ?></p>
+        <p class="text-2xl font-bold text-blue-400"><?= esc($stats['processing'] ?? 0) ?></p>
     </div>
     <div class="card rounded-lg p-4">
         <p class="text-gray-400 text-xs mb-1">Selesai</p>
-        <p class="text-2xl font-bold text-green-400"><?= $stats['completed'] ?? 0 ?></p>
+        <p class="text-2xl font-bold text-green-400"><?= esc($stats['completed'] ?? 0) ?></p>
     </div>
 </div>
 
@@ -61,7 +61,7 @@
                 <tbody>
                     <?php foreach (array_slice($orders, 0, 5) as $order): ?>
                         <tr class="border-t border-white/10">
-                            <td class="py-3 font-medium"><?= $order['order_code'] ?></td>
+                            <td class="py-3 font-medium"><?= esc($order['order_code']) ?></td>
                             <td class="py-3 text-gray-400"><?= date('d M Y', strtotime($order['created_at'])) ?></td>
                             <td class="py-3">Rp <?= number_format($order['total_price'], 0, ',', '.') ?></td>
                             <td class="py-3">
@@ -90,7 +90,7 @@
                                 ];
                                 ?>
                                 <span class="status-badge <?= $statusColors[$order['status']] ?? '' ?>">
-                                    <?= $statusLabels[$order['status']] ?? $order['status'] ?>
+                                    <?= esc($statusLabels[$order['status']] ?? $order['status']) ?>
                                 </span>
                             </td>
                             <td class="py-3">

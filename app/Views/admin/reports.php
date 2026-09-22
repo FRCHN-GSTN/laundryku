@@ -8,12 +8,12 @@
         <?= csrf_field() ?>
         <div>
             <label class="block text-sm text-gray-400 mb-2">Tanggal Mulai</label>
-            <input type="date" name="start_date" value="<?= $startDate ?>"
+            <input type="date" name="start_date" value="<?= esc($startDate, 'attr') ?>"
                    class="input-field px-4 py-3 rounded-lg text-white">
         </div>
         <div>
             <label class="block text-sm text-gray-400 mb-2">Tanggal Akhir</label>
-            <input type="date" name="end_date" value="<?= $endDate ?>"
+            <input type="date" name="end_date" value="<?= esc($endDate, 'attr') ?>"
                    class="input-field px-4 py-3 rounded-lg text-white">
         </div>
         <div class="flex items-end">
@@ -60,8 +60,8 @@
                 <tbody>
                     <?php foreach ($orders as $order): ?>
                         <tr class="border-t border-white/10">
-                            <td class="py-3 font-medium"><?= $order['order_code'] ?></td>
-                            <td class="py-3 text-gray-400"><?= $order['user_name'] ?? '-' ?></td>
+                            <td class="py-3 font-medium"><?= esc($order['order_code']) ?></td>
+                            <td class="py-3 text-gray-400"><?= esc($order['user_name'] ?? '-') ?></td>
                             <td class="py-3 text-gray-400"><?= date('d M Y', strtotime($order['created_at'])) ?></td>
                             <td class="py-3">Rp <?= number_format($order['total_price'], 0, ',', '.') ?></td>
                         </tr>

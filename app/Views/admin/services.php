@@ -33,10 +33,10 @@
                 <tbody>
                     <?php foreach ($services as $service): ?>
                         <tr class="border-t border-white/10 hover:bg-white/5 transition-colors">
-                            <td class="py-3 font-medium"><?= $service['name'] ?></td>
-                            <td class="py-3 text-gray-400"><?= $service['description'] ?: '-' ?></td>
-                            <td class="py-3">Rp <?= number_format($service['price'], 0, ',', '.') ?></td>
-                            <td class="py-3 text-gray-400">/<?= $service['unit'] ?></td>
+                            <td class="py-3 font-medium"><?= esc($service['name']) ?></td>
+                            <td class="py-3 text-gray-400"><?= esc($service['description'] ?: '-') ?></td>
+                            <td class="py-3">Rp <?= number_format(esc($service['price']), 0, ',', '.') ?></td>
+                            <td class="py-3 text-gray-400">/<?= esc($service['unit']) ?></td>
                             <td class="py-3">
                                 <span class="status-badge <?= $service['is_active'] ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400' ?>">
                                     <?= $service['is_active'] ? 'Aktif' : 'Nonaktif' ?>

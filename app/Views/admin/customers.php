@@ -31,15 +31,15 @@
                                 <div class="flex items-center">
                                     <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mr-3">
                                         <span class="text-primary font-semibold">
-                                            <?= strtoupper(substr($customer['name'], 0, 1)) ?>
+                                            <?= esc(strtoupper(substr($customer['name'], 0, 1))) ?>
                                         </span>
                                     </div>
-                                    <span class="font-medium"><?= $customer['name'] ?></span>
+                                    <span class="font-medium"><?= esc($customer['name']) ?></span>
                                 </div>
                             </td>
-                            <td class="py-3 text-gray-400"><?= $customer['email'] ?></td>
-                            <td class="py-3 text-gray-400"><?= $customer['phone'] ?? '-' ?></td>
-                            <td class="py-3 text-gray-400 max-w-xs truncate"><?= $customer['address'] ?? '-' ?></td>
+                            <td class="py-3 text-gray-400"><?= esc($customer['email']) ?></td>
+                            <td class="py-3 text-gray-400"><?= esc($customer['phone'] ?? '-') ?></td>
+                            <td class="py-3 text-gray-400 max-w-xs truncate"><?= esc($customer['address'] ?? '-') ?></td>
                             <td class="py-3 text-gray-400"><?= date('d M Y', strtotime($customer['created_at'])) ?></td>
                             <td class="py-3">
                                 <a href="/admin/customers/<?= $customer['id'] ?>" class="text-primary hover:underline">

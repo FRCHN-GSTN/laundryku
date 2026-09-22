@@ -8,7 +8,7 @@
     <?php if (session()->getFlashdata('errors')): ?>
         <div class="mb-4 p-4 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400">
             <?php foreach (session()->getFlashdata('errors') as $error): ?>
-                <p><?= $error ?></p>
+                <p><?= esc($error) ?></p>
             <?php endforeach; ?>
         </div>
     <?php endif; ?>

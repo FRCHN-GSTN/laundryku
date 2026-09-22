@@ -5,7 +5,7 @@
 <div class="max-w-4xl">
     <div class="flex justify-between items-center mb-6">
         <div>
-            <h3 class="text-2xl font-bold"><?= $order['order_code'] ?></h3>
+            <h3 class="text-2xl font-bold"><?= esc($order['order_code']) ?></h3>
             <p class="text-gray-400">Dipesan pada <?= date('d M Y H:i', strtotime($order['created_at'])) ?></p>
         </div>
         <a href="/admin/orders" class="text-primary hover:underline flex items-center">
@@ -59,7 +59,7 @@
                 <div class="space-y-3">
                     <div class="flex justify-between">
                         <span class="text-gray-400">Kode Pesanan</span>
-                        <span class="font-medium"><?= $order['order_code'] ?></span>
+                        <span class="font-medium"><?= esc($order['order_code']) ?></span>
                     </div>
                     <div class="flex justify-between">
                         <span class="text-gray-400">Status</span>
@@ -88,7 +88,7 @@
                         ];
                         ?>
                         <span class="status-badge <?= $statusColors[$order['status']] ?? '' ?>">
-                            <?= $statusLabels[$order['status']] ?? $order['status'] ?>
+                            <?= esc($statusLabels[$order['status']] ?? $order['status']) ?>
                         </span>
                     </div>
                     <div class="flex justify-between">
@@ -98,19 +98,19 @@
                     <?php if ($order['delivery_address']): ?>
                         <div class="flex justify-between">
                             <span class="text-gray-400">Alamat</span>
-                            <span class="font-medium text-right max-w-xs"><?= $order['delivery_address'] ?></span>
+                            <span class="font-medium text-right max-w-xs"><?= esc($order['delivery_address']) ?></span>
                         </div>
                     <?php endif; ?>
                     <?php if ($order['notes']): ?>
                         <div class="flex justify-between">
                             <span class="text-gray-400">Catatan</span>
-                            <span class="font-medium text-right max-w-xs"><?= $order['notes'] ?></span>
+                            <span class="font-medium text-right max-w-xs"><?= esc($order['notes']) ?></span>
                         </div>
                     <?php endif; ?>
                     <?php if ($order['total_weight']): ?>
                         <div class="flex justify-between">
                             <span class="text-gray-400">Total Berat</span>
-                            <span class="font-medium"><?= $order['total_weight'] ?> kg</span>
+                            <span class="font-medium"><?= esc($order['total_weight']) ?> kg</span>
                         </div>
                     <?php endif; ?>
                 </div>
@@ -122,9 +122,9 @@
                     <?php foreach ($items as $item): ?>
                         <div class="flex justify-between items-center py-3 border-b border-white/10 last:border-0">
                             <div>
-                                <p class="font-medium"><?= $item['service_name'] ?></p>
+                                <p class="font-medium"><?= esc($item['service_name']) ?></p>
                                 <p class="text-sm text-gray-400">
-                                    <?= $item['quantity'] ?> <?= $item['unit'] ?> × Rp <?= number_format($item['subtotal'] / $item['quantity'], 0, ',', '.') ?>
+                                    <?= esc($item['quantity']) ?> <?= esc($item['unit']) ?> × Rp <?= number_format($item['subtotal'] / $item['quantity'], 0, ',', '.') ?>
                                 </p>
                             </div>
                             <p class="font-semibold">Rp <?= number_format($item['subtotal'], 0, ',', '.') ?></p>
@@ -147,12 +147,12 @@
                     <div class="flex items-center">
                         <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mr-4">
                             <span class="text-primary font-semibold text-lg">
-                                <?= strtoupper(substr($user['name'], 0, 1)) ?>
+                                <?= esc(strtoupper(substr($user['name'], 0, 1))) ?>
                             </span>
                         </div>
                         <div>
-                            <p class="font-medium"><?= $user['name'] ?></p>
-                            <p class="text-sm text-gray-400"><?= $user['email'] ?></p>
+                            <p class="font-medium"><?= esc($user['name']) ?></p>
+                            <p class="text-sm text-gray-400"><?= esc($user['email']) ?></p>
                         </div>
                     </div>
                     <?php if ($user['phone']): ?>
@@ -160,7 +160,7 @@
                             <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
                             </svg>
-                            <?= $user['phone'] ?>
+                            <?= esc($user['phone']) ?>
                         </div>
                     <?php endif; ?>
                     <?php if ($user['address']): ?>
@@ -169,7 +169,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
                             </svg>
-                            <span><?= $user['address'] ?></span>
+                            <span><?= esc($user['address']) ?></span>
                         </div>
                     <?php endif; ?>
                 </div>

@@ -12,7 +12,7 @@ $routes->get('/auth/login', 'Auth::login');
 $routes->post('/auth/attempt', 'Auth::attempt');
 $routes->get('/auth/register', 'Auth::register');
 $routes->post('/auth/register', 'Auth::register');
-$routes->get('/auth/logout', 'Auth::logout');
+$routes->post('/auth/logout', 'Auth::logout');
 
 // Customer routes - requires login
 $routes->group('customer', ['filter' => 'auth'], function ($routes) {

@@ -39,7 +39,7 @@
                             <td class="p-4">
                                 <span class="px-2 py-1 rounded bg-primary/20 text-primary text-xs"><?= esc($faq['category']) ?></span>
                             </td>
-                            <td class="p-4 text-gray-400"><?= $faq['sort_order'] ?></td>
+                            <td class="p-4 text-gray-400"><?= esc($faq['sort_order']) ?></td>
                             <td class="p-4">
                                 <?php if ($faq['is_active']): ?>
                                     <span class="status-badge bg-green-500/20 text-green-400">Aktif</span>

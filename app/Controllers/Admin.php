@@ -29,6 +29,7 @@ class Admin extends BaseController
             'todayOrders' => $this->orderModel->getTodayOrders(),
             'todayRevenue' => $this->orderModel->getTodayRevenue(),
             'pendingOrders' => $this->orderModel->where('status', 'pending')->orderBy('created_at', 'ASC')->findAll(),
+            'pageTitle' => 'Dashboard',
         ];
 
         return view('admin/dashboard', $data);
@@ -47,6 +48,7 @@ class Admin extends BaseController
         $data = [
             'orders' => $orders,
             'currentStatus' => $status,
+            'pageTitle' => 'Pesanan',
         ];
 
         return view('admin/orders', $data);
@@ -64,6 +66,7 @@ class Admin extends BaseController
             'order' => $order,
             'items' => $this->orderItemModel->getOrderItems($orderId),
             'user' => $this->userModel->find($order['user_id']),
+            'pageTitle' => 'Detail Pesanan #' . $order['order_code'],
         ];
 
         return view('admin/order_detail', $data);
@@ -87,6 +90,7 @@ class Admin extends BaseController
     {
         $data = [
             'services' => $this->serviceModel->findAll(),
+            'pageTitle' => 'Layanan',
         ];
 
         return view('admin/services', $data);
@@ -118,7 +122,7 @@ class Admin extends BaseController
             return redirect()->to('/admin/services')->with('success', 'Layanan berhasil ditambahkan');
         }
 
-        return view('admin/service_form');
+        return view('admin/service_form', ['pageTitle' => 'Tambah Layanan']);
     }
 
     public function editService($serviceId)
@@ -155,6 +159,7 @@ class Admin extends BaseController
 
         $data = [
             'service' => $service,
+            'pageTitle' => 'Edit Layanan',
         ];
 
         return view('admin/service_form', $data);
@@ -170,6 +175,7 @@ class Admin extends BaseController
     {
         $data = [
             'customers' => $this->userModel->getCustomers(),
+            'pageTitle' => 'Pelanggan',
         ];
 
         return view('admin/customers', $data);
@@ -186,6 +192,7 @@ class Admin extends BaseController
         $data = [
             'customer' => $customer,
             'orders' => $this->orderModel->where('user_id', $customerId)->orderBy('created_at', 'DESC')->findAll(),
+            'pageTitle' => 'Detail Pelanggan',
         ];
 
         return view('admin/customer_detail', $data);
@@ -208,6 +215,7 @@ class Admin extends BaseController
                                                 ->where('orders.status', 'completed')
                                                 ->select('SUM(orders.total_price) as total')
                                                 ->first(),
+            'pageTitle' => 'Laporan',
         ];
 
         return view('admin/reports', $data);

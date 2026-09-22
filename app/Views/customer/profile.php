@@ -10,20 +10,20 @@
             <?= csrf_field() ?>
             <div class="mb-4">
                 <label class="block text-sm font-medium text-gray-300 mb-2">Nama Lengkap</label>
-                <input type="text" name="name" value="<?= $user['name'] ?>" required
+                <input type="text" name="name" value="<?= esc($user['name']) ?>" required
                        class="input-field w-full px-4 py-3 rounded-lg text-white placeholder-gray-500">
             </div>
 
             <div class="mb-4">
                 <label class="block text-sm font-medium text-gray-300 mb-2">Email</label>
-                <input type="email" value="<?= $user['email'] ?>" disabled
+                <input type="email" value="<?= esc($user['email']) ?>" disabled
                        class="input-field w-full px-4 py-3 rounded-lg text-gray-500 bg-white/5">
                 <p class="text-xs text-gray-500 mt-1">Email tidak dapat diubah</p>
             </div>
 
             <div class="mb-4">
                 <label class="block text-sm font-medium text-gray-300 mb-2">No. Telepon</label>
-                <input type="tel" name="phone" value="<?= $user['phone'] ?>" required
+                <input type="tel" name="phone" value="<?= esc($user['phone']) ?>" required
                        class="input-field w-full px-4 py-3 rounded-lg text-white placeholder-gray-500">
             </div>
 
@@ -31,7 +31,7 @@
                 <label class="block text-sm font-medium text-gray-300 mb-2">Alamat</label>
                 <textarea name="address" rows="3"
                           class="input-field w-full px-4 py-3 rounded-lg text-white placeholder-gray-500"
-                          placeholder="Masukkan alamat"><?= $user['address'] ?></textarea>
+                          placeholder="Masukkan alamat"><?= esc($user['address']) ?></textarea>
             </div>
 
             <div class="flex gap-4">

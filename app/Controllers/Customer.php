@@ -25,6 +25,7 @@ class Customer extends BaseController
         $data = [
             'orders' => $this->orderModel->getUserOrders($userId),
             'stats' => $this->orderModel->getStats(),
+            'pageTitle' => 'Dashboard',
         ];
 
         return view('customer/dashboard', $data);
@@ -34,6 +35,7 @@ class Customer extends BaseController
     {
         $data = [
             'services' => $this->serviceModel->getActiveServices(),
+            'pageTitle' => 'Order Baru',
         ];
 
         return view('customer/new_order', $data);
@@ -102,6 +104,7 @@ class Customer extends BaseController
         $userId = session()->get('user_id');
         $data = [
             'orders' => $this->orderModel->getUserOrders($userId),
+            'pageTitle' => 'Riwayat Pesanan',
         ];
 
         return view('customer/orders', $data);
@@ -119,6 +122,7 @@ class Customer extends BaseController
         $data = [
             'order' => $order,
             'items' => $this->orderItemModel->getOrderItems($orderId),
+            'pageTitle' => 'Detail Pesanan',
         ];
 
         return view('customer/order_detail', $data);
@@ -144,6 +148,7 @@ class Customer extends BaseController
         $userModel = new \App\Models\UserModel();
         $data = [
             'user' => $userModel->find($userId),
+            'pageTitle' => 'Profil',
         ];
 
         return view('customer/profile', $data);

@@ -171,13 +171,13 @@
 
         <?php if (session()->getFlashdata('success')): ?>
             <div class="alert alert-success">
-                <?= session()->getFlashdata('success') ?>
+                <?= esc(session()->getFlashdata('success')) ?>
             </div>
         <?php endif; ?>
 
         <?php if (session()->getFlashdata('error')): ?>
             <div class="alert alert-error">
-                <?= session()->getFlashdata('error') ?>
+                <?= esc(session()->getFlashdata('error')) ?>
             </div>
         <?php endif; ?>
 
@@ -185,7 +185,7 @@
             <?= csrf_field() ?>
             <div class="form-group">
                 <label for="email">Email</label>
-                <input type="email" id="email" name="email" value="<?= old('email') ?>" placeholder="Masukkan email Anda" required>
+                <input type="email" id="email" name="email" value="<?= esc(old('email'), 'attr') ?>" placeholder="Masukkan email Anda" required>
             </div>
             <div class="form-group">
                 <label for="password">Password</label>

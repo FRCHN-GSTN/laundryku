@@ -74,9 +74,15 @@ class AdminSettings extends BaseController
             $this->settingsModel->setValue('qris_image', '/uploads/qris/' . $newName);
         }
 
-        // Save other settings
+        // Save other settings (whitelist)
+        $allowedKeys = [
+            'company_name', 'company_tagline', 'company_phone', 'company_whatsapp',
+            'company_email', 'company_address', 'operational_hours', 'free_delivery_radius',
+            'hero_headline', 'hero_description', 'rating_average', 'total_reviews',
+            'qris_static_string',
+        ];
         foreach ($postSettings as $key => $value) {
-            if (!in_array($key, ['csrf_token', 'csrf_hash', 'qris_image_file', 'qris_image_delete'])) {
+            if (in_array($key, $allowedKeys)) {
                 $this->settingsModel->setValue($key, $value);
             }
         }

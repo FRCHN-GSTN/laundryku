@@ -34,7 +34,7 @@
                 ];
                 ?>
                 <span class="status-badge <?= $statusColors[$order['status']] ?? '' ?>">
-                    <?= $statusLabels[$order['status']] ?? $order['status'] ?>
+                    <?= esc($statusLabels[$order['status']] ?? $order['status']) ?>
                 </span>
             </div>
 
@@ -76,7 +76,7 @@
                             <?php foreach ($items as $item): ?>
                                 <tr class="border-t border-white/10">
                                     <td class="py-3"><?= esc($item['service_name'] ?? $item['name'] ?? '-') ?></td>
-                                    <td class="py-3"><?= $item['quantity'] ?> <?= esc($item['unit'] ?? 'kg') ?></td>
+                                    <td class="py-3"><?= esc($item['quantity']) ?> <?= esc($item['unit'] ?? 'kg') ?></td>
                                     <td class="py-3">Rp <?= number_format($item['price'] ?? 0, 0, ',', '.') ?></td>
                                     <td class="py-3 text-right">Rp <?= number_format($item['subtotal'] ?? 0, 0, ',', '.') ?></td>
                                 </tr>
@@ -184,7 +184,7 @@
                     $qrUrl = \App\Libraries\Qris::getQrUrl($dynamicQris);
                     ?>
                     <div class="bg-white p-4 rounded-lg inline-block mb-4">
-                        <img src="<?= $qrUrl ?>" alt="QRIS Code" class="w-48 h-48">
+                        <img src="<?= esc($qrUrl, 'attr') ?>" alt="QRIS Code" class="w-48 h-48">
                     </div>
                 <?php else: ?>
                     <div class="bg-white/5 p-4 rounded-lg inline-block mb-4">

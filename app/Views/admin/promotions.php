@@ -45,9 +45,9 @@
                             </td>
                             <td class="p-4">
                                 <?php if ($promo['discount_type'] === 'percentage'): ?>
-                                    <span class="text-green-400 font-semibold"><?= $promo['discount_value'] ?>%</span>
+                                    <span class="text-green-400 font-semibold"><?= esc($promo['discount_value']) ?>%</span>
                                 <?php else: ?>
-                                    <span class="text-green-400 font-semibold">Rp <?= number_format($promo['discount_value'], 0, ',', '.') ?></span>
+                                    <span class="text-green-400 font-semibold">Rp <?= number_format(esc($promo['discount_value']), 0, ',', '.') ?></span>
                                 <?php endif; ?>
                             </td>
                             <td class="p-4 text-sm text-gray-400">

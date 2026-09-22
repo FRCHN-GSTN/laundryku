@@ -48,9 +48,9 @@
                 <tbody>
                     <?php foreach ($orders as $order): ?>
                         <tr class="border-t border-white/10 hover:bg-white/5 transition-colors">
-                            <td class="py-3 font-medium"><?= $order['order_code'] ?></td>
-                            <td class="py-3 text-gray-400"><?= $order['user_name'] ?? '-' ?></td>
-                            <td class="py-3 text-gray-400"><?= $order['user_phone'] ?? '-' ?></td>
+                            <td class="py-3 font-medium"><?= esc($order['order_code']) ?></td>
+                            <td class="py-3 text-gray-400"><?= esc($order['user_name'] ?? '-') ?></td>
+                            <td class="py-3 text-gray-400"><?= esc($order['user_phone'] ?? '-') ?></td>
                             <td class="py-3 text-gray-400"><?= date('d M Y', strtotime($order['created_at'])) ?></td>
                             <td class="py-3">Rp <?= number_format($order['total_price'], 0, ',', '.') ?></td>
                             <td class="py-3">
@@ -79,7 +79,7 @@
                                 ];
                                 ?>
                                 <span class="status-badge <?= $statusColors[$order['status']] ?? '' ?>">
-                                    <?= $statusLabels[$order['status']] ?? $order['status'] ?>
+                                    <?= esc($statusLabels[$order['status']] ?? $order['status']) ?>
                                 </span>
                             </td>
                             <td class="py-3">

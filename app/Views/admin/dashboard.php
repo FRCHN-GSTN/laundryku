@@ -5,19 +5,19 @@
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
     <div class="card rounded-lg p-4">
         <p class="text-gray-400 text-xs mb-1">Pesanan Hari Ini</p>
-        <p class="text-2xl font-bold text-primary"><?= $stats['total_today'] ?? 0 ?></p>
+        <p class="text-2xl font-bold text-primary"><?= esc($stats['total_today'] ?? 0) ?></p>
     </div>
     <div class="card rounded-lg p-4">
         <p class="text-gray-400 text-xs mb-1">Menunggu</p>
-        <p class="text-2xl font-bold text-amber-400"><?= $stats['pending'] ?? 0 ?></p>
+        <p class="text-2xl font-bold text-amber-400"><?= esc($stats['pending'] ?? 0) ?></p>
     </div>
     <div class="card rounded-lg p-4">
         <p class="text-gray-400 text-xs mb-1">Sedang Diproses</p>
-        <p class="text-2xl font-bold text-blue-400"><?= $stats['processing'] ?? 0 ?></p>
+        <p class="text-2xl font-bold text-blue-400"><?= esc($stats['processing'] ?? 0) ?></p>
     </div>
     <div class="card rounded-lg p-4">
         <p class="text-gray-400 text-xs mb-1">Selesai</p>
-        <p class="text-2xl font-bold text-green-400"><?= $stats['completed'] ?? 0 ?></p>
+        <p class="text-2xl font-bold text-green-400"><?= esc($stats['completed'] ?? 0) ?></p>
     </div>
 </div>
 
@@ -48,10 +48,10 @@
                 <div class="flex items-center justify-between p-4 rounded-lg bg-white/5">
                     <div class="flex items-center">
                         <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mr-4">
-                            <span class="text-primary font-semibold text-sm"><?= substr($order['order_code'], -4) ?></span>
+                            <span class="text-primary font-semibold text-sm"><?= esc(substr($order['order_code'], -4)) ?></span>
                         </div>
                         <div>
-                            <p class="font-medium"><?= $order['order_code'] ?></p>
+                            <p class="font-medium"><?= esc($order['order_code']) ?></p>
                             <p class="text-sm text-gray-400">Rp <?= number_format($order['total_price'], 0, ',', '.') ?></p>
                         </div>
                     </div>
@@ -89,7 +89,7 @@
                 <tbody>
                     <?php foreach (array_slice($todayOrders, 0, 5) as $order): ?>
                         <tr class="border-t border-white/10">
-                            <td class="py-3 font-medium"><?= $order['order_code'] ?></td>
+                            <td class="py-3 font-medium"><?= esc($order['order_code']) ?></td>
                             <td class="py-3 text-gray-400">-</td>
                             <td class="py-3">Rp <?= number_format($order['total_price'], 0, ',', '.') ?></td>
                             <td class="py-3">
@@ -118,7 +118,7 @@
                                 ];
                                 ?>
                                 <span class="status-badge <?= $statusColors[$order['status']] ?? '' ?>">
-                                    <?= $statusLabels[$order['status']] ?? $order['status'] ?>
+                                    <?= esc($statusLabels[$order['status']] ?? $order['status']) ?>
                                 </span>
                             </td>
                             <td class="py-3">

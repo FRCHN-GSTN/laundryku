@@ -8,7 +8,7 @@
     <?php if (session()->getFlashdata('errors')): ?>
         <div class="mb-4 p-4 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400">
             <?php foreach (session()->getFlashdata('errors') as $error): ?>
-                <p><?= $error ?></p>
+                <p><?= esc($error) ?></p>
             <?php endforeach; ?>
         </div>
     <?php endif; ?>
@@ -41,26 +41,26 @@
             </div>
             <div>
                 <label class="block text-sm text-gray-400 mb-1">Nilai Diskon *</label>
-                <input type="number" name="discount_value" value="<?= $promotion['discount_value'] ?? old('discount_value') ?>" class="input-field w-full px-4 py-2.5 rounded-lg text-white" min="0" required>
+                <input type="number" name="discount_value" value="<?= esc($promotion['discount_value'] ?? old('discount_value'), 'attr') ?>" class="input-field w-full px-4 py-2.5 rounded-lg text-white" min="0" required>
             </div>
             <div>
                 <label class="block text-sm text-gray-400 mb-1">Diskon Maksimum</label>
-                <input type="number" name="max_discount" value="<?= $promotion['max_discount'] ?? old('max_discount') ?>" class="input-field w-full px-4 py-2.5 rounded-lg text-white" min="0" placeholder="Opsional">
+                <input type="number" name="max_discount" value="<?= esc($promotion['max_discount'] ?? old('max_discount'), 'attr') ?>" class="input-field w-full px-4 py-2.5 rounded-lg text-white" min="0" placeholder="Opsional">
             </div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div>
                 <label class="block text-sm text-gray-400 mb-1">Minimum Order</label>
-                <input type="number" name="min_order" value="<?= $promotion['min_order'] ?? old('min_order') ?>" class="input-field w-full px-4 py-2.5 rounded-lg text-white" min="0" placeholder="Opsional">
+                <input type="number" name="min_order" value="<?= esc($promotion['min_order'] ?? old('min_order'), 'attr') ?>" class="input-field w-full px-4 py-2.5 rounded-lg text-white" min="0" placeholder="Opsional">
             </div>
             <div>
                 <label class="block text-sm text-gray-400 mb-1">Tanggal Mulai *</label>
-                <input type="date" name="start_date" value="<?= $promotion['start_date'] ?? old('start_date') ?>" class="input-field w-full px-4 py-2.5 rounded-lg text-white" required>
+                <input type="date" name="start_date" value="<?= esc($promotion['start_date'] ?? old('start_date'), 'attr') ?>" class="input-field w-full px-4 py-2.5 rounded-lg text-white" required>
             </div>
             <div>
                 <label class="block text-sm text-gray-400 mb-1">Tanggal Selesai *</label>
-                <input type="date" name="end_date" value="<?= $promotion['end_date'] ?? old('end_date') ?>" class="input-field w-full px-4 py-2.5 rounded-lg text-white" required>
+                <input type="date" name="end_date" value="<?= esc($promotion['end_date'] ?? old('end_date'), 'attr') ?>" class="input-field w-full px-4 py-2.5 rounded-lg text-white" required>
             </div>
         </div>
 

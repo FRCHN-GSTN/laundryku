@@ -5,7 +5,7 @@
 <div class="max-w-3xl">
     <div class="flex justify-between items-center mb-6">
         <div>
-            <h3 class="text-2xl font-bold"><?= $order['order_code'] ?></h3>
+            <h3 class="text-2xl font-bold"><?= esc($order['order_code']) ?></h3>
             <p class="text-gray-400">Dipesan pada <?= date('d M Y H:i', strtotime($order['created_at'])) ?></p>
         </div>
         <?php if ($order['status'] === 'pending'): ?>
@@ -62,7 +62,7 @@
         <div class="space-y-3">
             <div class="flex justify-between">
                 <span class="text-gray-400">Kode Pesanan</span>
-                <span class="font-medium"><?= $order['order_code'] ?></span>
+                <span class="font-medium"><?= esc($order['order_code']) ?></span>
             </div>
             <div class="flex justify-between">
                 <span class="text-gray-400">Pengiriman</span>
@@ -71,19 +71,19 @@
             <?php if ($order['delivery_address']): ?>
                 <div class="flex justify-between">
                     <span class="text-gray-400">Alamat</span>
-                    <span class="font-medium text-right max-w-xs"><?= $order['delivery_address'] ?></span>
+                    <span class="font-medium text-right max-w-xs"><?= esc($order['delivery_address']) ?></span>
                 </div>
             <?php endif; ?>
             <?php if ($order['notes']): ?>
                 <div class="flex justify-between">
                     <span class="text-gray-400">Catatan</span>
-                    <span class="font-medium text-right max-w-xs"><?= $order['notes'] ?></span>
+                    <span class="font-medium text-right max-w-xs"><?= esc($order['notes']) ?></span>
                 </div>
             <?php endif; ?>
             <?php if ($order['total_weight']): ?>
                 <div class="flex justify-between">
                     <span class="text-gray-400">Total Berat</span>
-                    <span class="font-medium"><?= $order['total_weight'] ?> kg</span>
+                    <span class="font-medium"><?= esc($order['total_weight']) ?> kg</span>
                 </div>
             <?php endif; ?>
         </div>
@@ -95,9 +95,9 @@
             <?php foreach ($items as $item): ?>
                 <div class="flex justify-between items-center py-3 border-b border-white/10 last:border-0">
                     <div>
-                        <p class="font-medium"><?= $item['service_name'] ?></p>
+                        <p class="font-medium"><?= esc($item['service_name']) ?></p>
                         <p class="text-sm text-gray-400">
-                            <?= $item['quantity'] ?> <?= $item['unit'] ?> × Rp <?= number_format($item['subtotal'] / $item['quantity'], 0, ',', '.') ?>
+                            <?= esc($item['quantity']) ?> <?= esc($item['unit']) ?> × Rp <?= number_format($item['subtotal'] / $item['quantity'], 0, ',', '.') ?>
                         </p>
                     </div>
                     <p class="font-semibold">Rp <?= number_format($item['subtotal'], 0, ',', '.') ?></p>

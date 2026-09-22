@@ -13,29 +13,29 @@
                     <?php foreach ($services as $service): ?>
                         <div class="card rounded-lg p-4 hover:border-primary/30 transition-colors">
                             <label class="flex items-start cursor-pointer">
-                                <input type="checkbox" name="services[]" value="<?= $service['id'] ?>" 
+                                <input type="checkbox" name="services[]" value="<?= esc($service['id'], 'attr') ?>" 
                                        class="mt-1 mr-3 w-5 h-5 rounded border-gray-600 text-primary focus:ring-primary"
                                        onchange="updateTotal()">
                                 <div class="flex-1">
                                     <div class="flex justify-between items-start">
                                         <div>
-                                            <p class="font-medium"><?= $service['name'] ?></p>
-                                            <p class="text-sm text-gray-400"><?= $service['description'] ?></p>
+                                             <p class="font-medium"><?= esc($service['name']) ?></p>
+                                             <p class="text-sm text-gray-400"><?= esc($service['description']) ?></p>
                                         </div>
                                         <p class="text-primary font-semibold">
                                             Rp <?= number_format($service['price'], 0, ',', '.') ?>
-                                            <span class="text-xs text-gray-400">/<?= $service['unit'] ?></span>
+                                             <span class="text-xs text-gray-400">/<?= esc($service['unit']) ?></span>
                                         </p>
                                     </div>
                                     <div class="mt-3">
                                         <label class="text-sm text-gray-400">Jumlah:</label>
-                                        <input type="number" name="quantities[<?= $service['id'] ?>]" 
+                                         <input type="number" name="quantities[<?= esc($service['id'], 'attr') ?>]" 
                                                value="1" min="0.5" step="0.5"
                                                class="input-field w-24 px-3 py-2 rounded-lg text-white ml-2"
-                                               data-price="<?= $service['price'] ?>"
-                                               data-unit="<?= $service['unit'] ?>"
+                                               data-price="<?= esc($service['price'], 'attr') ?>"
+                                               data-unit="<?= esc($service['unit'], 'attr') ?>"
                                                onchange="updateTotal()">
-                                        <span class="text-sm text-gray-400 ml-1"><?= $service['unit'] ?></span>
+                                         <span class="text-sm text-gray-400 ml-1"><?= esc($service['unit']) ?></span>
                                     </div>
                                 </div>
                             </label>

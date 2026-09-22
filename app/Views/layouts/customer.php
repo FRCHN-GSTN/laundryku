@@ -158,12 +158,15 @@
             </nav>
 
             <div class="absolute bottom-6 left-6 right-6">
-                <a href="/auth/logout" class="btn-ghost flex items-center px-4 py-3 rounded-lg text-gray-400 hover:text-white">
-                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
-                    </svg>
-                    Keluar
-                </a>
+                <form action="/auth/logout" method="POST">
+                    <?= csrf_field() ?>
+                    <button type="submit" class="btn-ghost flex items-center px-4 py-3 rounded-lg text-gray-400 hover:text-white w-full">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                        </svg>
+                        Keluar
+                    </button>
+                </form>
             </div>
         </aside>
 
@@ -181,18 +184,18 @@
             </div>
 
             <div class="mb-6">
-                <h2 class="text-xl lg:text-2xl font-semibold"><?= $pageTitle ?? 'Dashboard' ?></h2>
+                <h2 class="text-xl lg:text-2xl font-semibold"><?= esc($pageTitle ?? 'Dashboard') ?></h2>
             </div>
 
             <?php if (session()->getFlashdata('success')): ?>
                 <div class="mb-4 p-4 rounded-lg bg-green-500/10 border border-green-500/30 text-green-400" role="alert">
-                    <?= session()->getFlashdata('success') ?>
+                    <?= esc(session()->getFlashdata('success')) ?>
                 </div>
             <?php endif; ?>
 
             <?php if (session()->getFlashdata('error')): ?>
                 <div class="mb-4 p-4 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400" role="alert">
-                    <?= session()->getFlashdata('error') ?>
+                    <?= esc(session()->getFlashdata('error')) ?>
                 </div>
             <?php endif; ?>
 

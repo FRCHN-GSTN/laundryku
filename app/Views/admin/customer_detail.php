@@ -5,7 +5,7 @@
 <div class="max-w-4xl">
     <div class="flex justify-between items-center mb-6">
         <div>
-            <h3 class="text-2xl font-bold"><?= $customer['name'] ?></h3>
+            <h3 class="text-2xl font-bold"><?= esc($customer['name']) ?></h3>
             <p class="text-gray-400">Pelanggan sejak <?= date('d M Y', strtotime($customer['created_at'])) ?></p>
         </div>
         <a href="/admin/customers" class="text-primary hover:underline flex items-center">
@@ -22,11 +22,11 @@
                 <div class="text-center mb-6">
                     <div class="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
                         <span class="text-primary font-bold text-2xl">
-                            <?= strtoupper(substr($customer['name'], 0, 1)) ?>
+                            <?= esc(strtoupper(substr($customer['name'], 0, 1))) ?>
                         </span>
                     </div>
-                    <h4 class="text-xl font-semibold"><?= $customer['name'] ?></h4>
-                    <p class="text-gray-400"><?= $customer['email'] ?></p>
+                    <h4 class="text-xl font-semibold"><?= esc($customer['name']) ?></h4>
+                    <p class="text-gray-400"><?= esc($customer['email']) ?></p>
                 </div>
 
                 <div class="space-y-4">
@@ -35,7 +35,7 @@
                             <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
                             </svg>
-                            <?= $customer['phone'] ?>
+                            <?= esc($customer['phone']) ?>
                         </div>
                     <?php endif; ?>
                     
@@ -45,7 +45,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
                             </svg>
-                            <span><?= $customer['address'] ?></span>
+                            <span><?= esc($customer['address']) ?></span>
                         </div>
                     <?php endif; ?>
                 </div>
@@ -75,7 +75,7 @@
                             <tbody>
                                 <?php foreach ($orders as $order): ?>
                                     <tr class="border-t border-white/10">
-                                        <td class="py-3 font-medium"><?= $order['order_code'] ?></td>
+                                        <td class="py-3 font-medium"><?= esc($order['order_code']) ?></td>
                                         <td class="py-3 text-gray-400"><?= date('d M Y', strtotime($order['created_at'])) ?></td>
                                         <td class="py-3">Rp <?= number_format($order['total_price'], 0, ',', '.') ?></td>
                                         <td class="py-3">
@@ -104,7 +104,7 @@
                                             ];
                                             ?>
                                             <span class="status-badge <?= $statusColors[$order['status']] ?? '' ?>">
-                                                <?= $statusLabels[$order['status']] ?? $order['status'] ?>
+                                                <?= esc($statusLabels[$order['status']] ?? $order['status']) ?>
                                             </span>
                                         </td>
                                         <td class="py-3">

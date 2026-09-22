@@ -69,7 +69,7 @@
                 <div class="mb-4 p-4 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
                     <ul class="list-disc list-inside">
                         <?php foreach (session()->getFlashdata('errors') as $error): ?>
-                            <li><?= $error ?></li>
+                            <li><?= esc($error) ?></li>
                         <?php endforeach; ?>
                     </ul>
                 </div>
@@ -77,7 +77,7 @@
 
             <?php if (session()->getFlashdata('error')): ?>
                 <div class="mb-4 p-4 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
-                    <?= session()->getFlashdata('error') ?>
+                    <?= esc(session()->getFlashdata('error')) ?>
                 </div>
             <?php endif; ?>
 
@@ -85,21 +85,21 @@
                 <?= csrf_field() ?>
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-300 mb-2">Nama Lengkap</label>
-                    <input type="text" name="name" value="<?= old('name') ?>" required
+                    <input type="text" name="name" value="<?= esc(old('name'), 'attr') ?>" required
                            class="input-field w-full px-4 py-3 rounded-lg text-white placeholder-gray-500"
                            placeholder="Masukkan nama lengkap">
                 </div>
 
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-300 mb-2">Email</label>
-                    <input type="email" name="email" value="<?= old('email') ?>" required
+                    <input type="email" name="email" value="<?= esc(old('email'), 'attr') ?>" required
                            class="input-field w-full px-4 py-3 rounded-lg text-white placeholder-gray-500"
                            placeholder="Masukkan email">
                 </div>
 
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-300 mb-2">No. Telepon</label>
-                    <input type="tel" name="phone" value="<?= old('phone') ?>" required
+                    <input type="tel" name="phone" value="<?= esc(old('phone'), 'attr') ?>" required
                            class="input-field w-full px-4 py-3 rounded-lg text-white placeholder-gray-500"
                            placeholder="Masukkan no. telepon">
                 </div>
@@ -108,7 +108,7 @@
                     <label class="block text-sm font-medium text-gray-300 mb-2">Alamat</label>
                     <textarea name="address" rows="2"
                               class="input-field w-full px-4 py-3 rounded-lg text-white placeholder-gray-500"
-                              placeholder="Masukkan alamat (opsional)"><?= old('address') ?></textarea>
+                              placeholder="Masukkan alamat (opsional)"><?= esc(old('address')) ?></textarea>
                 </div>
 
                 <div class="mb-4">

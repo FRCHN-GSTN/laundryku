@@ -12,7 +12,7 @@
             <div class="mb-4 p-4 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
                 <ul class="list-disc list-inside">
                     <?php foreach (session()->getFlashdata('errors') as $error): ?>
-                        <li><?= $error ?></li>
+                        <li><?= esc($error) ?></li>
                     <?php endforeach; ?>
                 </ul>
             </div>
@@ -22,7 +22,7 @@
             <?= csrf_field() ?>
             <div class="mb-4">
                 <label class="block text-sm font-medium text-gray-300 mb-2">Nama Layanan</label>
-                <input type="text" name="name" value="<?= $service['name'] ?? old('name') ?>" required
+                <input type="text" name="name" value="<?= esc($service['name'] ?? old('name'), 'attr') ?>" required
                        class="input-field w-full px-4 py-3 rounded-lg text-white placeholder-gray-500"
                        placeholder="Contoh: Cuci Kering Setrika">
             </div>
@@ -31,13 +31,13 @@
                 <label class="block text-sm font-medium text-gray-300 mb-2">Deskripsi</label>
                 <textarea name="description" rows="3"
                           class="input-field w-full px-4 py-3 rounded-lg text-white placeholder-gray-500"
-                          placeholder="Deskripsi layanan (opsional)"><?= $service['description'] ?? old('description') ?></textarea>
+                          placeholder="Deskripsi layanan (opsional)"><?= esc($service['description'] ?? old('description')) ?></textarea>
             </div>
 
             <div class="grid grid-cols-2 gap-4 mb-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-300 mb-2">Harga (Rp)</label>
-                    <input type="number" name="price" value="<?= $service['price'] ?? old('price') ?>" required min="0"
+                    <input type="number" name="price" value="<?= esc($service['price'] ?? old('price'), 'attr') ?>" required min="0"
                            class="input-field w-full px-4 py-3 rounded-lg text-white placeholder-gray-500"
                            placeholder="0">
                 </div>
