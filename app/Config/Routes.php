@@ -32,6 +32,8 @@ $routes->group('admin', ['filter' => 'auth'], function ($routes) {
     $routes->get('orders', 'Admin::orders');
     $routes->get('orders/(:num)', 'Admin::orderDetail/$1');
     $routes->post('orders/(:num)/status', 'Admin::updateStatus/$1');
+    $routes->post('orders/(:num)/confirm-weight', 'Admin::confirmWeight/$1');
+    $routes->post('orders/(:num)/notes', 'Admin::updateAdminNotes/$1');
     $routes->get('services', 'Admin::services');
     $routes->get('services/create', 'Admin::createService');
     $routes->post('services/create', 'Admin::createService');

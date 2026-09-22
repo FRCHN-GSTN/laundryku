@@ -38,16 +38,31 @@ class Admin extends BaseController
     public function orders()
     {
         $status = $this->request->getGet('status');
+        $search = $this->request->getGet('search');
+
+        $builder = $this->orderModel->builder();
+        $builder->select('orders.*, users.name as user_name, users.phone as user_phone');
+        $builder->join('users', 'users.id = orders.user_id');
 
         if ($status) {
-            $orders = $this->orderModel->where('status', $status)->getOrdersWithUser();
-        } else {
-            $orders = $this->orderModel->getOrdersWithUser();
+            $builder->where('orders.status', $status);
         }
+
+        if ($search) {
+            $builder->groupStart();
+            $builder->like('orders.order_code', $search);
+            $builder->orLike('users.name', $search);
+            $builder->orLike('users.phone', $search);
+            $builder->groupEnd();
+        }
+
+        $builder->orderBy('orders.created_at', 'DESC');
+        $orders = $builder->get()->getResultArray();
 
         $data = [
             'orders' => $orders,
             'currentStatus' => $status,
+            'search' => $search,
             'pageTitle' => 'Pesanan',
         ];
 
@@ -66,8 +81,22 @@ class Admin extends BaseController
             'order' => $order,
             'items' => $this->orderItemModel->getOrderItems($orderId),
             'user' => $this->userModel->find($order['user_id']),
+            'statusHistory' => $this->orderModel->getStatusHistory($orderId),
+            'validNextStatuses' => $this->orderModel->isValidTransition($order['status'], '')
+                ? array_keys(array_filter(
+                    \ReflectionClass::getConstantValue($this->orderModel, 'validTransitions')[$order['status']] ?? [],
+                    fn($v) => $v !== null
+                ))
+                : [],
             'pageTitle' => 'Detail Pesanan #' . $order['order_code'],
         ];
+
+        // Get allowed next statuses from the model's valid transitions
+        $ref = new \ReflectionClass($this->orderModel);
+        $transitions = $ref->getProperty('validTransitions');
+        $transitions->setAccessible(true);
+        $allTransitions = $transitions->getValue($this->orderModel);
+        $data['validNextStatuses'] = $allTransitions[$order['status']] ?? [];
 
         return view('admin/order_detail', $data);
     }
@@ -75,15 +104,62 @@ class Admin extends BaseController
     public function updateStatus($orderId)
     {
         $status = $this->request->getPost('status');
-        $validStatuses = ['pending', 'confirmed', 'washing', 'drying', 'ironing', 'ready', 'delivered', 'completed', 'cancelled'];
+        $note = $this->request->getPost('status_note');
 
-        if (!in_array($status, $validStatuses)) {
-            return redirect()->back()->with('error', 'Status tidak valid');
+        $userName = session()->get('user_name') ?: 'Admin';
+
+        if (!$this->orderModel->updateStatus($orderId, $status, $userName, $note)) {
+            $order = $this->orderModel->find($orderId);
+            if (!$order) {
+                return redirect()->to('/admin/orders')->with('error', 'Pesanan tidak ditemukan');
+            }
+            return redirect()->back()->with('error', 'Transisi status tidak valid dari "' .
+                (OrderModel::$statusLabels[$order['status']] ?? $order['status']) . '" ke "' .
+                (OrderModel::$statusLabels[$status] ?? $status) . '"');
         }
 
-        $this->orderModel->update($orderId, ['status' => $status]);
-
         return redirect()->to('/admin/orders/' . $orderId)->with('success', 'Status pesanan berhasil diupdate');
+    }
+
+    public function confirmWeight($orderId)
+    {
+        $order = $this->orderModel->find($orderId);
+
+        if (!$order) {
+            return redirect()->to('/admin/orders')->with('error', 'Pesanan tidak ditemukan');
+        }
+
+        $confirmedWeight = (float) $this->request->getPost('confirmed_weight');
+        $confirmedPrice = (float) $this->request->getPost('confirmed_price');
+
+        if ($confirmedWeight <= 0 || $confirmedPrice <= 0) {
+            return redirect()->back()->with('error', 'Berat dan harga harus lebih dari 0');
+        }
+
+        $this->orderModel->confirmWeight($orderId, $confirmedWeight, $confirmedPrice);
+
+        // Log the weight confirmation
+        $userName = session()->get('user_name') ?: 'Admin';
+        $historyModel = new \App\Models\OrderStatusHistoryModel();
+        $historyModel->insert([
+            'order_id'   => $orderId,
+            'old_status' => $order['status'],
+            'new_status' => $order['status'],
+            'note'       => "Konfirmasi berat: {$confirmedWeight}kg, Harga: Rp " . number_format($confirmedPrice, 0, ',', '.'),
+            'changed_by' => $userName,
+            'created_at' => date('Y-m-d H:i:s'),
+        ]);
+
+        return redirect()->to('/admin/orders/' . $orderId)->with('success', 'Berat dan harga berhasil dikonfirmasi');
+    }
+
+    public function updateAdminNotes($orderId)
+    {
+        $adminNotes = $this->request->getPost('admin_notes');
+
+        $this->orderModel->update($orderId, ['admin_notes' => $adminNotes]);
+
+        return redirect()->to('/admin/orders/' . $orderId)->with('success', 'Catatan admin berhasil disimpan');
     }
 
     public function services()

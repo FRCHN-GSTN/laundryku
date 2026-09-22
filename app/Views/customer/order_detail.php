@@ -7,9 +7,22 @@
         <div>
             <h3 class="text-2xl font-bold"><?= esc($order['order_code']) ?></h3>
             <p class="text-gray-400">Dipesan pada <?= date('d M Y H:i', strtotime($order['created_at'])) ?></p>
+            <?php if ($order['estimated_date']): ?>
+                <?php
+                $estDate = strtotime($order['estimated_date']);
+                $now = time();
+                $isOverdue = $estDate < $now && !in_array($order['status'], ['completed', 'cancelled']);
+                ?>
+                <p class="text-sm <?= $isOverdue ? 'text-red-400' : 'text-primary' ?> mt-1">
+                    Estimasi selesai: <?= date('d M Y', $estDate) ?>
+                    <?php if ($isOverdue): ?>
+                        (melewati estimasi)
+                    <?php endif; ?>
+                </p>
+            <?php endif; ?>
         </div>
-        <?php if ($order['status'] === 'pending'): ?>
-            <form action="/customer/orders/<?= $order['id'] ?>/cancel" method="POST" 
+        <?php if (in_array($order['status'], ['pending', 'confirmed'])): ?>
+            <form action="/customer/orders/<?= $order['id'] ?>/cancel" method="POST"
                   onsubmit="return confirm('Yakin ingin membatalkan pesanan ini?')">
                 <?= csrf_field() ?>
                 <button type="submit" class="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-red-500 hover:bg-red-600 transition-all">
@@ -19,6 +32,7 @@
         <?php endif; ?>
     </div>
 
+    <!-- Status Timeline -->
     <div class="card rounded-lg p-6 mb-6">
         <h4 class="text-lg font-semibold mb-4">Status Pesanan</h4>
         <div class="flex items-center justify-between">
@@ -30,7 +44,7 @@
             ?>
             <?php foreach ($steps as $index => $step): ?>
                 <div class="flex flex-col items-center flex-1">
-                    <div class="w-8 h-8 rounded-full flex items-center justify-center mb-2 
+                    <div class="w-8 h-8 rounded-full flex items-center justify-center mb-2
                         <?= $index <= $currentIndex ? 'bg-primary text-white' : 'bg-white/10 text-gray-500' ?>">
                         <?php if ($index < $currentIndex): ?>
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -49,7 +63,7 @@
                 <?php endif; ?>
             <?php endforeach; ?>
         </div>
-        
+
         <?php if ($order['status'] === 'cancelled'): ?>
             <div class="mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-center">
                 Pesanan dibatalkan
@@ -57,6 +71,7 @@
         <?php endif; ?>
     </div>
 
+    <!-- Detail Pesanan -->
     <div class="card rounded-lg p-6 mb-6">
         <h4 class="text-lg font-semibold mb-4">Detail Pesanan</h4>
         <div class="space-y-3">
@@ -80,15 +95,22 @@
                     <span class="font-medium text-right max-w-xs"><?= esc($order['notes']) ?></span>
                 </div>
             <?php endif; ?>
-            <?php if ($order['total_weight']): ?>
-                <div class="flex justify-between">
-                    <span class="text-gray-400">Total Berat</span>
-                    <span class="font-medium"><?= esc($order['total_weight']) ?> kg</span>
-                </div>
-            <?php endif; ?>
+            <div class="flex justify-between">
+                <span class="text-gray-400">Total Berat</span>
+                <span class="font-medium">
+                    <?php if ($order['confirmed_weight']): ?>
+                        <?= esc($order['confirmed_weight']) ?> kg (dikonfirmasi)
+                    <?php elseif ($order['total_weight']): ?>
+                        <?= esc($order['total_weight']) ?> kg (estimasi)
+                    <?php else: ?>
+                        -
+                    <?php endif; ?>
+                </span>
+            </div>
         </div>
     </div>
 
+    <!-- Item Pesanan -->
     <div class="card rounded-lg p-6 mb-6">
         <h4 class="text-lg font-semibold mb-4">Item Pesanan</h4>
         <div class="space-y-3">
@@ -107,10 +129,53 @@
         <div class="mt-4 pt-4 border-t border-white/10">
             <div class="flex justify-between items-center">
                 <span class="text-lg font-semibold">Total Bayar</span>
-                <span class="text-2xl font-bold text-primary">Rp <?= number_format($order['total_price'], 0, ',', '.') ?></span>
+                <span class="text-2xl font-bold text-primary">
+                    Rp <?= number_format($order['confirmed_price'] ?? $order['total_price'], 0, ',', '.') ?>
+                </span>
             </div>
+            <?php if ($order['confirmed_price'] && $order['confirmed_price'] != $order['total_price']): ?>
+                <div class="flex justify-between text-sm mt-1">
+                    <span class="text-gray-500">Estimasi awal</span>
+                    <span class="text-gray-500 line-through">Rp <?= number_format($order['total_price'], 0, ',', '.') ?></span>
+                </div>
+            <?php endif; ?>
         </div>
     </div>
+
+    <!-- Status History -->
+    <?php if (!empty($statusHistory)): ?>
+        <div class="card rounded-lg p-6 mb-6">
+            <h4 class="text-lg font-semibold mb-4">Riwayat Status</h4>
+            <div class="space-y-4">
+                <?php foreach ($statusHistory as $index => $history): ?>
+                    <div class="flex gap-3">
+                        <div class="flex flex-col items-center">
+                            <div class="w-3 h-3 rounded-full <?= $index === count($statusHistory) - 1 ? 'bg-primary' : 'bg-white/20' ?>"></div>
+                            <?php if ($index < count($statusHistory) - 1): ?>
+                                <div class="w-0.5 flex-1 bg-white/10 mt-1"></div>
+                            <?php endif; ?>
+                        </div>
+                        <div class="pb-4">
+                            <p class="font-medium text-sm">
+                                <?php if ($history['old_status'] && $history['old_status'] !== $history['new_status']): ?>
+                                    <?= esc(\App\Models\OrderModel::$statusLabels[$history['old_status']] ?? $history['old_status']) ?>
+                                    → <?= esc(\App\Models\OrderModel::$statusLabels[$history['new_status']] ?? $history['new_status']) ?>
+                                <?php else: ?>
+                                    <?= esc(\App\Models\OrderModel::$statusLabels[$history['new_status']] ?? $history['new_status']) ?>
+                                <?php endif; ?>
+                            </p>
+                            <?php if ($history['note']): ?>
+                                <p class="text-xs text-gray-400 mt-1"><?= esc($history['note']) ?></p>
+                            <?php endif; ?>
+                            <p class="text-xs text-gray-500 mt-1">
+                                <?= date('d M Y H:i', strtotime($history['created_at'])) ?>
+                            </p>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    <?php endif; ?>
 
     <a href="/customer/orders" class="inline-flex items-center text-primary hover:underline transition-colors">
         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

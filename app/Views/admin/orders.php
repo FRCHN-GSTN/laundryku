@@ -27,6 +27,21 @@
         </div>
     </div>
 
+    <!-- Search -->
+    <form action="/admin/orders" method="GET" class="mb-6">
+        <?php if ($currentStatus): ?>
+            <input type="hidden" name="status" value="<?= esc($currentStatus, 'attr') ?>">
+        <?php endif; ?>
+        <div class="flex gap-2">
+            <input type="text" name="search" value="<?= esc($search ?? '', 'attr') ?>"
+                   class="input-field flex-1 px-4 py-2.5 rounded-lg text-white placeholder-gray-500"
+                   placeholder="Cari kode order, nama, atau telepon...">
+            <button type="submit" class="btn-primary px-6 py-2.5 rounded-lg font-semibold text-white">
+                Cari
+            </button>
+        </div>
+    </form>
+
     <?php if (empty($orders)): ?>
         <div class="text-center py-12 text-gray-400">
             <p>Tidak ada pesanan ditemukan</p>
@@ -38,8 +53,8 @@
                     <tr class="text-left text-gray-400 text-sm">
                         <th class="pb-3">Kode Order</th>
                         <th class="pb-3">Pelanggan</th>
-                        <th class="pb-3">Telepon</th>
                         <th class="pb-3">Tanggal</th>
+                        <th class="pb-3">Estimasi</th>
                         <th class="pb-3">Total</th>
                         <th class="pb-3">Status</th>
                         <th class="pb-3">Aksi</th>
@@ -49,37 +64,34 @@
                     <?php foreach ($orders as $order): ?>
                         <tr class="border-t border-white/10 hover:bg-white/5 transition-colors">
                             <td class="py-3 font-medium"><?= esc($order['order_code']) ?></td>
-                            <td class="py-3 text-gray-400"><?= esc($order['user_name'] ?? '-') ?></td>
-                            <td class="py-3 text-gray-400"><?= esc($order['user_phone'] ?? '-') ?></td>
-                            <td class="py-3 text-gray-400"><?= date('d M Y', strtotime($order['created_at'])) ?></td>
-                            <td class="py-3">Rp <?= number_format($order['total_price'], 0, ',', '.') ?></td>
+                            <td class="py-3 text-gray-400">
+                                <div>
+                                    <p class="text-white"><?= esc($order['user_name'] ?? '-') ?></p>
+                                    <p class="text-xs"><?= esc($order['user_phone'] ?? '-') ?></p>
+                                </div>
+                            </td>
+                            <td class="py-3 text-gray-400 text-sm"><?= date('d M Y', strtotime($order['created_at'])) ?></td>
+                            <td class="py-3 text-sm">
+                                <?php if ($order['estimated_date']): ?>
+                                    <?php
+                                    $estDate = strtotime($order['estimated_date']);
+                                    $now = time();
+                                    $isOverdue = $estDate < $now && !in_array($order['status'], ['completed', 'cancelled']);
+                                    ?>
+                                    <span class="<?= $isOverdue ? 'text-red-400' : 'text-gray-400' ?>">
+                                        <?= date('d M Y', $estDate) ?>
+                                        <?php if ($isOverdue): ?>
+                                            <span class="text-xs">(terlambat)</span>
+                                        <?php endif; ?>
+                                    </span>
+                                <?php else: ?>
+                                    <span class="text-gray-500">-</span>
+                                <?php endif; ?>
+                            </td>
+                            <td class="py-3">Rp <?= number_format($order['confirmed_price'] ?? $order['total_price'], 0, ',', '.') ?></td>
                             <td class="py-3">
-                                <?php
-                                $statusColors = [
-                                    'pending' => 'bg-gray-500/20 text-gray-400',
-                                    'confirmed' => 'bg-primary/20 text-primary',
-                                    'washing' => 'bg-blue-500/20 text-blue-400',
-                                    'drying' => 'bg-blue-500/20 text-blue-400',
-                                    'ironing' => 'bg-blue-500/20 text-blue-400',
-                                    'ready' => 'bg-amber-500/20 text-amber-400',
-                                    'delivered' => 'bg-amber-500/20 text-amber-400',
-                                    'completed' => 'bg-green-500/20 text-green-400',
-                                    'cancelled' => 'bg-red-500/20 text-red-400',
-                                ];
-                                $statusLabels = [
-                                    'pending' => 'Menunggu',
-                                    'confirmed' => 'Dikonfirmasi',
-                                    'washing' => 'Dicuci',
-                                    'drying' => 'Dijemur',
-                                    'ironing' => 'Disetrika',
-                                    'ready' => 'Siap Diambil',
-                                    'delivered' => 'Diantar',
-                                    'completed' => 'Selesai',
-                                    'cancelled' => 'Dibatalkan',
-                                ];
-                                ?>
-                                <span class="status-badge <?= $statusColors[$order['status']] ?? '' ?>">
-                                    <?= esc($statusLabels[$order['status']] ?? $order['status']) ?>
+                                <span class="status-badge <?= \App\Models\OrderModel::$statusColors[$order['status']] ?? '' ?>">
+                                    <?= esc(\App\Models\OrderModel::$statusLabels[$order['status']] ?? $order['status']) ?>
                                 </span>
                             </td>
                             <td class="py-3">

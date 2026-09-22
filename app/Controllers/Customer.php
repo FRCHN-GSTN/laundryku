@@ -134,6 +134,7 @@ class Customer extends BaseController
         $data = [
             'order' => $order,
             'items' => $this->orderItemModel->getOrderItems($orderId),
+            'statusHistory' => $this->orderModel->getStatusHistory($orderId),
             'pageTitle' => 'Detail Pesanan',
         ];
 
@@ -145,11 +146,12 @@ class Customer extends BaseController
         $userId = session()->get('user_id');
         $order = $this->orderModel->where('id', $orderId)->where('user_id', $userId)->first();
 
-        if (!$order || $order['status'] !== 'pending') {
+        if (!$order || !in_array($order['status'], ['pending', 'confirmed'])) {
             return redirect()->back()->with('error', 'Tidak bisa membatalkan pesanan');
         }
 
-        $this->orderModel->update($orderId, ['status' => 'cancelled']);
+        $userName = session()->get('user_name') ?: 'Pelanggan';
+        $this->orderModel->updateStatus($orderId, 'cancelled', $userName, 'Dibatalkan oleh pelanggan');
 
         return redirect()->to('/customer/orders/' . $orderId)->with('success', 'Pesanan dibatalkan');
     }
