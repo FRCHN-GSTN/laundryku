@@ -24,7 +24,7 @@ class Customer extends BaseController
         $userId = session()->get('user_id');
         $data = [
             'orders' => $this->orderModel->getUserOrders($userId),
-            'stats' => $this->orderModel->getStats(),
+            'stats' => $this->orderModel->getStats($userId),
             'pageTitle' => 'Dashboard',
         ];
 
@@ -50,7 +50,7 @@ class Customer extends BaseController
         $deliveryAddress = $this->request->getPost('delivery_address');
         $notes = $this->request->getPost('notes');
 
-        if (empty($services)) {
+        if (empty($services) || !is_array($services)) {
             return redirect()->back()->withInput()->with('error', 'Pilih minimal satu layanan');
         }
 
@@ -60,7 +60,15 @@ class Customer extends BaseController
 
         foreach ($services as $serviceId) {
             $service = $this->serviceModel->find($serviceId);
-            $quantity = $quantities[$serviceId] ?? 1;
+            if (!$service || !$service['is_active']) {
+                return redirect()->back()->withInput()->with('error', 'Layanan tidak valid atau sudah tidak tersedia');
+            }
+
+            $quantity = (float) ($quantities[$serviceId] ?? 1);
+            if ($quantity < 0.5) {
+                return redirect()->back()->withInput()->with('error', 'Jumlah minimal 0.5 untuk layanan: ' . $service['name']);
+            }
+
             $subtotal = $service['price'] * $quantity;
             $totalPrice += $subtotal;
             if ($service['unit'] === 'kg') {
@@ -72,6 +80,10 @@ class Customer extends BaseController
                 'quantity' => $quantity,
                 'subtotal' => $subtotal,
             ];
+        }
+
+        if ($totalPrice <= 0) {
+            return redirect()->back()->withInput()->with('error', 'Total harga harus lebih dari 0');
         }
 
         $orderData = [

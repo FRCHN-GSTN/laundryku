@@ -64,14 +64,28 @@ class OrderModel extends Model
                      ->first();
     }
 
-    public function getStats()
+    public function getStats($userId = null)
     {
-        $today = date('Y-m-d');
+        $builder = $this->db->table('orders');
+        $builder->select('
+            COUNT(*) as total_today,
+            SUM(CASE WHEN status = "pending" THEN 1 ELSE 0 END) as pending,
+            SUM(CASE WHEN status IN ("washing","drying","ironing") THEN 1 ELSE 0 END) as processing,
+            SUM(CASE WHEN status = "completed" THEN 1 ELSE 0 END) as completed
+        ');
+        $builder->where('DATE(created_at)', date('Y-m-d'));
+
+        if ($userId) {
+            $builder->where('user_id', $userId);
+        }
+
+        $result = $builder->get()->getRowArray();
+
         return [
-            'total_today' => $this->where('DATE(created_at)', $today)->countAllResults(),
-            'pending' => $this->where('status', 'pending')->countAllResults(),
-            'processing' => $this->where('status', 'washing')->orWhere('status', 'drying')->orWhere('status', 'ironing')->countAllResults(),
-            'completed' => $this->where('status', 'completed')->countAllResults(),
+            'total_today' => (int) ($result['total_today'] ?? 0),
+            'pending'     => (int) ($result['pending'] ?? 0),
+            'processing'  => (int) ($result['processing'] ?? 0),
+            'completed'   => (int) ($result['completed'] ?? 0),
         ];
     }
 }
