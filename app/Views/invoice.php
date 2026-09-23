@@ -68,7 +68,7 @@
                     <tr>
                         <td><?= esc($item['service_name']) ?></td>
                         <td class="text-right"><?= esc($item['quantity']) ?> <?= esc($item['unit']) ?></td>
-                        <td class="text-right">Rp <?= number_format($item['subtotal'] / $item['quantity'], 0, ',', '.') ?></td>
+                        <td class="text-right">Rp <?= number_format($item['quantity'] > 0 ? $item['subtotal'] / $item['quantity'] : 0, 0, ',', '.') ?></td>
                         <td class="text-right">Rp <?= number_format($item['subtotal'], 0, ',', '.') ?></td>
                     </tr>
                 <?php endforeach; ?>
@@ -76,20 +76,51 @@
         </table>
 
         <div class="totals">
+            <?php
+            $itemsSubtotal = 0;
+            foreach ($items as $item) {
+                $itemsSubtotal += (float) $item['subtotal'];
+            }
+            $billable = \App\Models\OrderModel::billableAmount($order);
+            $gross = ! empty($order['confirmed_weight']) ? $itemsSubtotal : (float) $order['total_price'];
+            $discountShow = min((float) ($order['discount_amount'] ?? 0), $gross);
+            ?>
             <div class="row">
                 <span>Subtotal</span>
-                <span>Rp <?= number_format($order['total_price'], 0, ',', '.') ?></span>
+                <span>Rp <?= number_format($gross, 0, ',', '.') ?></span>
             </div>
-            <?php if ($order['discount_amount'] > 0): ?>
+            <?php if ($discountShow > 0): ?>
                 <div class="row" style="color: #22c55e;">
                     <span>Diskon</span>
-                    <span>- Rp <?= number_format($order['discount_amount'], 0, ',', '.') ?></span>
+                    <span>- Rp <?= number_format($discountShow, 0, ',', '.') ?></span>
                 </div>
             <?php endif; ?>
             <div class="row total">
                 <span>Total</span>
-                <span>Rp <?= number_format($order['final_price'] ?? $order['total_price'], 0, ',', '.') ?></span>
+                <span>Rp <?= number_format($billable, 0, ',', '.') ?></span>
             </div>
+            <?php if (! empty($order['confirmed_weight'])): ?>
+                <div class="row">
+                    <span>Berat dikonfirmasi</span>
+                    <span><?= esc($order['confirmed_weight']) ?> kg</span>
+                </div>
+            <?php endif; ?>
+            <?php if (! empty($payment)): ?>
+                <div class="row">
+                    <span>Metode</span>
+                    <span style="text-transform: uppercase;"><?= esc($payment['payment_method'] ?? '-') ?></span>
+                </div>
+                <div class="row">
+                    <span>Status</span>
+                    <span><?= ($payment['status'] ?? '') === 'paid' ? 'Lunas' : 'Belum lunas' ?></span>
+                </div>
+                <?php if (! empty($payment['payment_date'])): ?>
+                    <div class="row">
+                        <span>Tanggal bayar</span>
+                        <span><?= date('d M Y H:i', strtotime($payment['payment_date'])) ?></span>
+                    </div>
+                <?php endif; ?>
+            <?php endif; ?>
         </div>
 
         <div class="footer">

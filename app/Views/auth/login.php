@@ -73,9 +73,9 @@
             color: #ffb4ab;
         }
         .alert-success {
-            background: rgba(255, 95, 158, 0.1);
-            border: 1px solid rgba(255, 95, 158, 0.25);
-            color: #FF5F9E;
+            background: rgba(74, 222, 128, 0.1);
+            border: 1px solid rgba(74, 222, 128, 0.25);
+            color: #4ade80;
         }
 
         .form-group {

@@ -31,6 +31,7 @@
                         <th class="pb-3">Estimasi</th>
                         <th class="pb-3">Berat</th>
                         <th class="pb-3">Total</th>
+                        <th class="pb-3">Bayar</th>
                         <th class="pb-3">Status</th>
                         <th class="pb-3">Aksi</th>
                     </tr>
@@ -63,7 +64,18 @@
                                     -
                                 <?php endif; ?>
                             </td>
-                            <td class="py-3">Rp <?= number_format($order['confirmed_price'] ?? $order['total_price'], 0, ',', '.') ?></td>
+                            <td class="py-3">Rp <?= number_format(\App\Models\OrderModel::billableAmount($order), 0, ',', '.') ?></td>
+                            <td class="py-3">
+                                <?php if (($order['payment_status'] ?? '') === 'paid'): ?>
+                                    <span class="status-badge bg-green-500/20 text-green-400">Lunas</span>
+                                <?php elseif (($order['payment_method'] ?? '') === 'cash' && !empty($order['payment_status'])): ?>
+                                    <span class="status-badge bg-amber-500/20 text-amber-400">Bayar di Tempat</span>
+                                <?php elseif (!empty($order['payment_status'])): ?>
+                                    <span class="status-badge bg-amber-500/20 text-amber-400">Menunggu Verifikasi</span>
+                                <?php else: ?>
+                                    <span class="status-badge bg-gray-500/20 text-gray-400">Belum dipilih</span>
+                                <?php endif; ?>
+                            </td>
                             <td class="py-3">
                                 <span class="status-badge <?= \App\Models\OrderModel::$statusColors[$order['status']] ?? '' ?>">
                                     <?= esc(\App\Models\OrderModel::$statusLabels[$order['status']] ?? $order['status']) ?>

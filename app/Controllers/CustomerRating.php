@@ -20,7 +20,7 @@ class CustomerRating extends BaseController
         $ratingModel = new RatingModel();
         $existing = $ratingModel->getOrderRating($orderId);
 
-        if ($this->request->getMethod() === 'post') {
+        if ($this->request->is('post')) {
             $rating = (int) $this->request->getPost('rating');
             $review = $this->request->getPost('review');
 

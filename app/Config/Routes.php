@@ -29,6 +29,7 @@ $routes->group('customer', ['filter' => 'auth'], function ($routes) {
     $routes->get('orders', 'Customer::orders');
     $routes->get('orders/(:num)', 'Customer::orderDetail/$1');
     $routes->post('orders/(:num)/cancel', 'Customer::cancelOrder/$1');
+    $routes->post('orders/(:num)/pay', 'Customer::choosePayment/$1');
     $routes->post('orders/(:num)/proof', 'Customer::uploadPaymentProof/$1');
     $routes->post('orders/(:num)/rate', 'CustomerRating::rate/$1');
     $routes->get('orders/(:num)/rate', 'CustomerRating::rate/$1');
@@ -74,6 +75,11 @@ $routes->group('admin', ['filter' => 'auth'], function ($routes) {
     $routes->post('faqs/(:num)/edit', 'AdminFaqs::edit/$1');
     $routes->post('faqs/(:num)/delete', 'AdminFaqs::delete/$1');
 
+    // User & role management
+    $routes->get('users', 'AdminUsers::index');
+    $routes->post('users/(:num)', 'AdminUsers::update/$1');
+    $routes->post('users/(:num)/toggle', 'AdminUsers::toggle/$1');
+
     // Settings
     $routes->get('settings', 'AdminSettings::index');
     $routes->post('settings', 'AdminSettings::update');
@@ -85,4 +91,5 @@ $routes->group('admin', ['filter' => 'auth'], function ($routes) {
     // Payments
     $routes->get('orders/(:num)/payment', 'AdminPayment::showPayment/$1');
     $routes->post('orders/(:num)/payment', 'AdminPayment::processPayment/$1');
+    $routes->post('orders/(:num)/payment/mark-paid', 'AdminPayment::markPaid/$1');
 });

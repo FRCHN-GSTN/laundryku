@@ -135,14 +135,14 @@ function updateTotal() {
             const quantityInput = document.querySelector(`input[name="quantities[${serviceId}]"]`);
             const price = parseFloat(quantityInput.dataset.price);
             const quantity = parseFloat(quantityInput.value) || 0;
-            total += price * quantity;
+            total += Math.round(price * quantity);
         }
     });
 
     document.getElementById('subtotalDisplay').textContent = 'Rp ' + total.toLocaleString('id-ID');
 
     const discount = parseFloat(document.getElementById('discountAmount').value) || 0;
-    const finalTotal = Math.max(0, total - discount);
+    const finalTotal = Math.max(0, total - Math.round(discount));
     document.getElementById('totalPrice').textContent = 'Rp ' + finalTotal.toLocaleString('id-ID');
 }
 
@@ -168,7 +168,7 @@ function validatePromo() {
             const quantityInput = document.querySelector(`input[name="quantities[${serviceId}]"]`);
             const price = parseFloat(quantityInput.dataset.price);
             const quantity = parseFloat(quantityInput.value) || 0;
-            total += price * quantity;
+            total += Math.round(price * quantity);
         }
     });
 
@@ -177,12 +177,13 @@ function validatePromo() {
     const discountDisplay = document.getElementById('discountDisplay');
     const discountAmount = document.getElementById('discountAmount');
 
+    const csrfInput = document.querySelector('input[name="<?= csrf_token_name() ?>"]');
     fetch('/api/promo/validate', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
             'X-Requested-With': 'XMLHttpRequest',
-            'X-CSRF-TOKEN': document.querySelector('input[name="csrf_token"]').value
+            'X-CSRF-TOKEN': csrfInput ? csrfInput.value : ''
         },
         body: `promo_code=${encodeURIComponent(code)}&order_total=${total}`
     })

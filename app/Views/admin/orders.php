@@ -18,11 +18,23 @@
             <a href="/admin/orders?status=washing" class="px-3 py-1.5 rounded text-sm font-medium <?= $currentStatus === 'washing' ? 'bg-blue-500 text-white' : 'bg-white/5 text-gray-400 hover:bg-white/10' ?> transition-all">
                 Dicuci
             </a>
+            <a href="/admin/orders?status=drying" class="px-3 py-1.5 rounded text-sm font-medium <?= $currentStatus === 'drying' ? 'bg-blue-500 text-white' : 'bg-white/5 text-gray-400 hover:bg-white/10' ?> transition-all">
+                Dijemur
+            </a>
+            <a href="/admin/orders?status=ironing" class="px-3 py-1.5 rounded text-sm font-medium <?= $currentStatus === 'ironing' ? 'bg-blue-500 text-white' : 'bg-white/5 text-gray-400 hover:bg-white/10' ?> transition-all">
+                Disetrika
+            </a>
             <a href="/admin/orders?status=ready" class="px-3 py-1.5 rounded text-sm font-medium <?= $currentStatus === 'ready' ? 'bg-amber-500 text-white' : 'bg-white/5 text-gray-400 hover:bg-white/10' ?> transition-all">
                 Siap
             </a>
+            <a href="/admin/orders?status=delivered" class="px-3 py-1.5 rounded text-sm font-medium <?= $currentStatus === 'delivered' ? 'bg-amber-500 text-white' : 'bg-white/5 text-gray-400 hover:bg-white/10' ?> transition-all">
+                Diantar
+            </a>
             <a href="/admin/orders?status=completed" class="px-3 py-1.5 rounded text-sm font-medium <?= $currentStatus === 'completed' ? 'bg-green-500 text-white' : 'bg-white/5 text-gray-400 hover:bg-white/10' ?> transition-all">
                 Selesai
+            </a>
+            <a href="/admin/orders?status=cancelled" class="px-3 py-1.5 rounded text-sm font-medium <?= $currentStatus === 'cancelled' ? 'bg-red-500 text-white' : 'bg-white/5 text-gray-400 hover:bg-white/10' ?> transition-all">
+                Batal
             </a>
         </div>
     </div>
@@ -56,6 +68,7 @@
                         <th class="pb-3">Tanggal</th>
                         <th class="pb-3">Estimasi</th>
                         <th class="pb-3">Total</th>
+                        <th class="pb-3">Status Bayar</th>
                         <th class="pb-3">Status</th>
                         <th class="pb-3">Aksi</th>
                     </tr>
@@ -88,7 +101,18 @@
                                     <span class="text-gray-500">-</span>
                                 <?php endif; ?>
                             </td>
-                            <td class="py-3">Rp <?= number_format($order['confirmed_price'] ?? $order['total_price'], 0, ',', '.') ?></td>
+                            <td class="py-3">Rp <?= number_format(\App\Models\OrderModel::billableAmount($order), 0, ',', '.') ?></td>
+                            <td class="py-3">
+                                <?php if (($order['payment_status'] ?? '') === 'paid'): ?>
+                                    <span class="status-badge bg-green-500/20 text-green-400">Lunas</span>
+                                <?php elseif (($order['payment_method'] ?? '') === 'cash' && !empty($order['payment_status'])): ?>
+                                    <span class="status-badge bg-amber-500/20 text-amber-400">Bayar di Tempat</span>
+                                <?php elseif (!empty($order['payment_status'])): ?>
+                                    <span class="status-badge bg-amber-500/20 text-amber-400">Menunggu Verifikasi</span>
+                                <?php else: ?>
+                                    <span class="status-badge bg-gray-500/20 text-gray-400">Belum dipilih</span>
+                                <?php endif; ?>
+                            </td>
                             <td class="py-3">
                                 <span class="status-badge <?= \App\Models\OrderModel::$statusColors[$order['status']] ?? '' ?>">
                                     <?= esc(\App\Models\OrderModel::$statusLabels[$order['status']] ?? $order['status']) ?>

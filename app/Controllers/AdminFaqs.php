@@ -25,7 +25,7 @@ class AdminFaqs extends BaseController
 
     public function create()
     {
-        if ($this->request->getMethod() === 'post') {
+        if ($this->request->is('post')) {
             $rules = [
                 'question' => 'required|max_length[255]',
                 'answer' => 'required',
@@ -62,7 +62,7 @@ class AdminFaqs extends BaseController
             return redirect()->to('/admin/faqs')->with('error', 'FAQ tidak ditemukan');
         }
 
-        if ($this->request->getMethod() === 'post') {
+        if ($this->request->is('post')) {
             $rules = [
                 'question' => 'required|max_length[255]',
                 'answer' => 'required',

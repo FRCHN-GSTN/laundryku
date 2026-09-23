@@ -55,6 +55,10 @@
                 <input type="number" name="min_order" value="<?= esc($promotion['min_order'] ?? old('min_order'), 'attr') ?>" class="input-field w-full px-4 py-2.5 rounded-lg text-white" min="0" placeholder="Opsional">
             </div>
             <div>
+                <label class="block text-sm text-gray-400 mb-1">Batas Pemakaian</label>
+                <input type="number" name="usage_limit" value="<?= esc($promotion['usage_limit'] ?? old('usage_limit'), 'attr') ?>" class="input-field w-full px-4 py-2.5 rounded-lg text-white" min="0" placeholder="Opsional">
+            </div>
+            <div>
                 <label class="block text-sm text-gray-400 mb-1">Tanggal Mulai *</label>
                 <input type="date" name="start_date" value="<?= esc($promotion['start_date'] ?? old('start_date'), 'attr') ?>" class="input-field w-full px-4 py-2.5 rounded-lg text-white" required>
             </div>

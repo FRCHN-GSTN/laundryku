@@ -20,10 +20,10 @@ class Auth implements FilterInterface
 
         $userRole = $session->get('user_role');
 
-        // Admin routes: only admin
+        // Admin routes: only admin & staff
         if (strpos($uri, '/admin') === 0) {
-            if ($userRole !== 'admin') {
-                return redirect()->to('/customer/dashboard')->with('error', 'Akses ditolak. Hanya untuk admin.');
+            if (! in_array($userRole, ['admin', 'staff'], true)) {
+                return redirect()->to('/customer/dashboard')->with('error', 'Akses ditolak. Hanya untuk admin/staff.');
             }
         }
 

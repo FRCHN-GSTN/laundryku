@@ -21,7 +21,7 @@ class Throttle implements FilterInterface
 
     public function before(RequestInterface $request, $arguments = null)
     {
-        $path = $request->getUri()->getPath();
+        $path = ltrim($request->getUri()->getPath(), '/');
         $ip = $request->getIPAddress();
 
         foreach ($this->rules as $route => $limits) {

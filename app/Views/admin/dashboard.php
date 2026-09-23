@@ -8,15 +8,15 @@
         <p class="text-2xl font-bold text-primary"><?= esc($stats['total_today'] ?? 0) ?></p>
     </div>
     <div class="card rounded-lg p-4">
-        <p class="text-gray-400 text-xs mb-1">Menunggu</p>
+        <p class="text-gray-400 text-xs mb-1">Menunggu (hari ini)</p>
         <p class="text-2xl font-bold text-amber-400"><?= esc($stats['pending'] ?? 0) ?></p>
     </div>
     <div class="card rounded-lg p-4">
-        <p class="text-gray-400 text-xs mb-1">Sedang Diproses</p>
+        <p class="text-gray-400 text-xs mb-1">Sedang Diproses (hari ini)</p>
         <p class="text-2xl font-bold text-blue-400"><?= esc($stats['processing'] ?? 0) ?></p>
     </div>
     <div class="card rounded-lg p-4">
-        <p class="text-gray-400 text-xs mb-1">Selesai</p>
+        <p class="text-gray-400 text-xs mb-1">Selesai (hari ini)</p>
         <p class="text-2xl font-bold text-green-400"><?= esc($stats['completed'] ?? 0) ?></p>
     </div>
 </div>
@@ -67,11 +67,11 @@
                             </div>
                             <div>
                                 <p class="font-medium"><?= esc($order['order_code']) ?></p>
-                                <p class="text-sm text-gray-400">Rp <?= number_format($order['total_price'], 0, ',', '.') ?></p>
+                                <p class="text-sm text-gray-400">Rp <?= number_format(\App\Models\OrderModel::billableAmount($order), 0, ',', '.') ?></p>
                             </div>
                         </div>
                         <a href="/admin/orders/<?= $order['id'] ?>" class="btn-primary px-4 py-2 rounded-lg text-sm font-medium text-white">
-                            Proses
+                            Detail
                         </a>
                     </div>
                 <?php endforeach; ?>
@@ -106,35 +106,11 @@
                     <?php foreach (array_slice($todayOrders, 0, 5) as $order): ?>
                         <tr class="border-t border-white/10">
                             <td class="py-3 font-medium"><?= esc($order['order_code']) ?></td>
-                            <td class="py-3 text-gray-400">-</td>
-                            <td class="py-3">Rp <?= number_format($order['total_price'], 0, ',', '.') ?></td>
+                            <td class="py-3 text-gray-400"><?= esc($order['user_name'] ?? '-') ?></td>
+                            <td class="py-3">Rp <?= number_format(\App\Models\OrderModel::billableAmount($order), 0, ',', '.') ?></td>
                             <td class="py-3">
-                                <?php
-                                $statusColors = [
-                                    'pending' => 'bg-gray-500/20 text-gray-400',
-                                    'confirmed' => 'bg-primary/20 text-primary',
-                                    'washing' => 'bg-blue-500/20 text-blue-400',
-                                    'drying' => 'bg-blue-500/20 text-blue-400',
-                                    'ironing' => 'bg-blue-500/20 text-blue-400',
-                                    'ready' => 'bg-amber-500/20 text-amber-400',
-                                    'delivered' => 'bg-amber-500/20 text-amber-400',
-                                    'completed' => 'bg-green-500/20 text-green-400',
-                                    'cancelled' => 'bg-red-500/20 text-red-400',
-                                ];
-                                $statusLabels = [
-                                    'pending' => 'Menunggu',
-                                    'confirmed' => 'Dikonfirmasi',
-                                    'washing' => 'Dicuci',
-                                    'drying' => 'Dijemur',
-                                    'ironing' => 'Disetrika',
-                                    'ready' => 'Siap Diambil',
-                                    'delivered' => 'Diantar',
-                                    'completed' => 'Selesai',
-                                    'cancelled' => 'Dibatalkan',
-                                ];
-                                ?>
-                                <span class="status-badge <?= $statusColors[$order['status']] ?? '' ?>">
-                                    <?= esc($statusLabels[$order['status']] ?? $order['status']) ?>
+                                <span class="status-badge <?= \App\Models\OrderModel::$statusColors[$order['status']] ?? '' ?>">
+                                    <?= esc(\App\Models\OrderModel::$statusLabels[$order['status']] ?? $order['status']) ?>
                                 </span>
                             </td>
                             <td class="py-3">
@@ -152,7 +128,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
-fetch('/api/chart/revenue')
+fetch('/admin/chart/revenue')
     .then(r => r.json())
     .then(data => {
         const ctx = document.getElementById('revenueChart').getContext('2d');
@@ -188,7 +164,7 @@ fetch('/api/chart/revenue')
         });
     });
 
-fetch('/api/chart/status')
+fetch('/admin/chart/status')
     .then(r => r.json())
     .then(data => {
         const ctx = document.getElementById('statusChart').getContext('2d');

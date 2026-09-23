@@ -43,6 +43,10 @@
                 <span class="material-symbols-outlined text-sm">search</span>
                 <span>Lacak</span>
             </a>
+            <a class="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-[#865DFF]/40 text-[#FFA3FD] text-label-lg font-label-lg hover:bg-[#865DFF]/15 transition-all" href="/auth/login">
+                <span class="material-symbols-outlined text-sm">login</span>
+                <span>Masuk</span>
+            </a>
             <a class="inline-flex items-center justify-center px-6 py-2.5 rounded-full bg-[#865DFF] text-white font-label-lg text-label-lg hover:bg-[#E384FF] hover:shadow-[0_0_20px_rgba(227,132,255,0.5)] active:scale-95 transition-all duration-200" href="/auth/register">
                 Daftar Sekarang
             </a>
@@ -186,7 +190,7 @@
                                 <p class="text-outline font-label-md text-label-md">Kurir Dedicated Zona Barat</p>
                             </div>
                         </div>
-                        <a class="p-2 rounded-full bg-[#865DFF]/20 text-[#FFA3FD] hover:bg-[#865DFF] hover:text-white transition-colors" href="https://wa.me/" rel="noopener noreferrer" target="_blank" title="Hubungi Kurir">
+                        <a class="p-2 rounded-full bg-[#865DFF]/20 text-[#FFA3FD] hover:bg-[#865DFF] hover:text-white transition-colors" href="https://wa.me/<?= esc($settings['company_whatsapp'] ?? '6281234567890') ?>" rel="noopener noreferrer" target="_blank" title="Hubungi Kurir">
                             <span class="material-symbols-outlined text-lg">chat</span>
                         </a>
                     </div>
@@ -637,10 +641,11 @@
                 Ketahui posisi cucian mulai dari penimbangan, pencucian, hingga saat kurir menuju ke tempat Anda.
             </p>
             <!-- Tracking Form -->
-            <form id="tracking-form" class="max-w-xl mx-auto flex flex-col sm:flex-row gap-3">
+            <form id="tracking-form" action="/track" method="post" class="max-w-xl mx-auto flex flex-col sm:flex-row gap-3">
+                <?= csrf_field() ?>
                 <div class="relative flex-1">
                     <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline">search</span>
-                    <input class="w-full pl-12 pr-4 py-3.5 rounded-full bg-[#191825] border border-outline-variant/40 text-on-surface placeholder:text-outline focus:outline-none focus:border-[#865DFF] focus:ring-2 focus:ring-[#865DFF]/30 font-body-sm text-body-sm" placeholder="Masukkan nomor resi (contoh: LND-9824)" required type="text" value="LND-9824"/>
+                    <input class="w-full pl-12 pr-4 py-3.5 rounded-full bg-[#191825] border border-outline-variant/40 text-on-surface placeholder:text-outline focus:outline-none focus:border-[#865DFF] focus:ring-2 focus:ring-[#865DFF]/30 font-body-sm text-body-sm" name="order_code" placeholder="Masukkan kode pesanan (contoh: ORD-20260922-0001)" required type="text"/>
                 </div>
                 <button class="px-8 py-3.5 rounded-full bg-[#865DFF] text-white font-label-lg text-label-lg hover:bg-[#E384FF] active:scale-95 transition-all" type="submit">
                     Cek Resi
@@ -812,7 +817,7 @@
                 <h4 class="text-on-surface font-label-caps text-label-caps tracking-wider mb-4">NAVIGASI & BANTUAN</h4>
                 <ul class="space-y-2.5">
                     <li><a class="text-on-surface-variant font-body-sm text-body-sm hover:text-primary transition-colors duration-200" href="#lacak-pesanan">Lacak Status Pesanan</a></li>
-                    <li><a class="text-on-surface-variant font-body-sm text-body-sm hover:text-primary transition-colors duration-200" href="https://wa.me/">Bantuan & FAQ WhatsApp</a></li>
+                    <li><a class="text-on-surface-variant font-body-sm text-body-sm hover:text-primary transition-colors duration-200" href="https://wa.me/<?= esc($settings['company_whatsapp'] ?? '6281234567890') ?>">Bantuan & FAQ WhatsApp</a></li>
                     <li><a class="text-secondary font-body-sm text-body-sm hover:text-primary transition-colors duration-200" href="#paket-harga">Daftar Paket Harga</a></li>
                 </ul>
             </div>

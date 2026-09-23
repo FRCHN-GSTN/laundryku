@@ -45,3 +45,12 @@ npm-debug.log
 # Database backups
 *.sql
 *.sql.gz
+
+# Build / test artifacts
+build/
+
+# Uploads berisi data pelanggan / identitas pembayaran (jangan di-commit)
+public/uploads/proofs/
+public/uploads/qris/
+public/uploads/*
+!public/uploads/.gitkeep

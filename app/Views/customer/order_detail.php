@@ -37,8 +37,8 @@
         <h4 class="text-lg font-semibold mb-4">Status Pesanan</h4>
         <div class="flex items-center justify-between">
             <?php
-            $steps = ['pending', 'confirmed', 'washing', 'drying', 'ironing', 'ready', 'completed'];
-            $stepLabels = ['Pesanan', 'Dikonfirmasi', 'Dicuci', 'Dijemur', 'Disetrika', 'Siap', 'Selesai'];
+            $steps = ['pending', 'confirmed', 'washing', 'drying', 'ironing', 'ready', 'delivered', 'completed'];
+            $stepLabels = ['Pesanan', 'Dikonfirmasi', 'Dicuci', 'Dijemur', 'Disetrika', 'Siap', 'Diantar', 'Selesai'];
             $currentIndex = array_search($order['status'], $steps);
             if ($currentIndex === false) $currentIndex = -1;
             ?>
@@ -114,12 +114,26 @@
     <div class="card rounded-lg p-6 mb-6">
         <h4 class="text-lg font-semibold mb-4">Item Pesanan</h4>
         <div class="space-y-3">
+            <?php
+            $itemsSubtotal = 0;
+            foreach ($items as $item) {
+                $itemsSubtotal += (float) $item['subtotal'];
+            }
+            $billable = \App\Models\OrderModel::billableAmount($order);
+            $displayGross = ! empty($order['confirmed_weight'])
+                ? $itemsSubtotal
+                : (float) $order['total_price'];
+            $displayDiscount = (float) ($order['discount_amount'] ?? 0);
+            if ($displayDiscount > $displayGross) {
+                $displayDiscount = $displayGross;
+            }
+            ?>
             <?php foreach ($items as $item): ?>
                 <div class="flex justify-between items-center py-3 border-b border-white/10 last:border-0">
                     <div>
                         <p class="font-medium"><?= esc($item['service_name']) ?></p>
                         <p class="text-sm text-gray-400">
-                            <?= esc($item['quantity']) ?> <?= esc($item['unit']) ?> × Rp <?= number_format($item['subtotal'] / $item['quantity'], 0, ',', '.') ?>
+                            <?= esc($item['quantity']) ?> <?= esc($item['unit']) ?> × Rp <?= number_format($item['quantity'] > 0 ? $item['subtotal'] / $item['quantity'] : 0, 0, ',', '.') ?>
                         </p>
                     </div>
                     <p class="font-semibold">Rp <?= number_format($item['subtotal'], 0, ',', '.') ?></p>
@@ -130,18 +144,18 @@
             <div class="space-y-2">
                 <div class="flex justify-between text-sm">
                     <span class="text-gray-400">Subtotal</span>
-                    <span>Rp <?= number_format($order['total_price'], 0, ',', '.') ?></span>
+                    <span>Rp <?= number_format($displayGross, 0, ',', '.') ?></span>
                 </div>
-                <?php if (($order['discount_amount'] ?? 0) > 0): ?>
+                <?php if ($displayDiscount > 0): ?>
                     <div class="flex justify-between text-sm">
                         <span class="text-green-400">Diskon</span>
-                        <span class="text-green-400">- Rp <?= number_format($order['discount_amount'], 0, ',', '.') ?></span>
+                        <span class="text-green-400">- Rp <?= number_format($displayDiscount, 0, ',', '.') ?></span>
                     </div>
                 <?php endif; ?>
                 <div class="flex justify-between items-center border-t border-white/10 pt-2">
                     <span class="text-lg font-semibold">Total Bayar</span>
                     <span class="text-2xl font-bold text-primary">
-                        Rp <?= number_format($order['confirmed_price'] ?? $order['final_price'] ?? $order['total_price'], 0, ',', '.') ?>
+                        Rp <?= number_format($billable, 0, ',', '.') ?>
                     </span>
                 </div>
                 <?php if ($order['confirmed_price'] && $order['confirmed_price'] != $order['total_price']): ?>
@@ -170,22 +184,135 @@
         </div>
     <?php endif; ?>
 
-    <!-- Payment Proof Upload -->
-    <?php if (in_array($order['status'], ['pending', 'confirmed']) && ($order['delivery_type'] === 'delivery')): ?>
+    <!-- Payment -->
+    <?php if ($order['status'] !== 'cancelled'): ?>
+        <?php
+        $billablePay = \App\Models\OrderModel::billableAmount($order);
+        $payStatus = $payment['status'] ?? null;
+        $payMethod = $payment['payment_method'] ?? null;
+        ?>
         <div class="card rounded-lg p-6 mb-6">
-            <h4 class="font-semibold mb-3">Upload Bukti Pembayaran</h4>
-            <p class="text-sm text-gray-400 mb-4">Upload bukti transfer/QRIS setelah melakukan pembayaran</p>
-            <form action="/customer/orders/<?= $order['id'] ?>/proof" method="POST" enctype="multipart/form-data">
-                <?= csrf_field() ?>
-                <div class="mb-4">
+            <div class="flex items-center justify-between mb-4">
+                <h4 class="text-lg font-semibold">Pembayaran</h4>
+                <?php if ($payStatus === 'paid'): ?>
+                    <span class="status-badge bg-green-500/20 text-green-400">Lunas</span>
+                <?php elseif ($payMethod === 'cash' && $payment): ?>
+                    <span class="status-badge bg-amber-500/20 text-amber-400">Bayar di Tempat</span>
+                <?php elseif ($payment): ?>
+                    <span class="status-badge bg-amber-500/20 text-amber-400">Menunggu Verifikasi</span>
+                <?php else: ?>
+                    <span class="status-badge bg-gray-500/20 text-gray-400">Belum dipilih</span>
+                <?php endif; ?>
+            </div>
+
+            <div class="space-y-2 mb-4">
+                <div class="flex justify-between">
+                    <span class="text-gray-400">Total Tagihan</span>
+                    <span class="font-bold text-primary">Rp <?= number_format($billablePay, 0, ',', '.') ?></span>
+                </div>
+                <?php if ($payMethod): ?>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-400">Metode</span>
+                        <span class="font-medium uppercase"><?= esc($payMethod) ?></span>
+                    </div>
+                <?php endif; ?>
+                <?php if ($payStatus === 'paid' && !empty($payment['payment_date'])): ?>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-400">Dibayar</span>
+                        <span><?= date('d M Y H:i', strtotime($payment['payment_date'])) ?></span>
+                    </div>
+                <?php endif; ?>
+            </div>
+
+            <?php if ($payStatus === 'paid'): ?>
+                <p class="text-sm text-green-400">Pembayaran sudah lunas. Terima kasih!</p>
+
+            <?php elseif ($payMethod === 'cash'): ?>
+                <div class="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 text-sm mb-4">
+                    Bayar tunai saat cucian diambil / diantar. Tidak perlu upload bukti.
+                </div>
+                <form action="/customer/orders/<?= $order['id'] ?>/pay" method="POST" class="inline">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="payment_method" value="qris">
+                    <button type="submit" class="px-4 py-2 rounded-lg text-sm font-semibold text-white border border-white/20 hover:bg-white/10 transition-all">
+                        Ganti ke QRIS
+                    </button>
+                </form>
+
+            <?php elseif ($payMethod === 'qris'): ?>
+                <?php if (!empty($qris_image)): ?>
+                    <div class="bg-white p-4 rounded-lg inline-block mb-4">
+                        <img src="<?= esc($qris_image) ?>" alt="QRIS" class="w-48 h-48 object-contain">
+                    </div>
+                <?php elseif (!empty($qris_string)): ?>
+                    <?php
+                    $payAmount = (int) round($billablePay);
+                    $dynamicQris = \App\Libraries\Qris::convertToDynamic($qris_string, $payAmount);
+                    $qrUrl = \App\Libraries\Qris::getQrUrl($dynamicQris);
+                    ?>
+                    <div class="bg-white p-4 rounded-lg inline-block mb-4">
+                        <img src="<?= esc($qrUrl, 'attr') ?>" alt="QRIS Code" class="w-48 h-48">
+                    </div>
+                <?php else: ?>
+                    <div class="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 text-sm mb-4">
+                        QRIS belum dikonfigurasi. Hubungi admin.
+                    </div>
+                <?php endif; ?>
+
+                <p class="text-sm text-gray-400 mb-4">Scan QR di atas, lalu upload bukti pembayaran.</p>
+
+                <?php if (!empty($payment['proof_image'])): ?>
+                    <div class="mb-4 p-3 rounded-lg bg-green-500/10 border border-green-500/30 text-green-400 text-sm">
+                        Bukti sudah diupload — menunggu verifikasi admin.
+                        <a href="<?= esc($payment['proof_image']) ?>" target="_blank" class="underline ml-1">Lihat</a>
+                    </div>
+                <?php endif; ?>
+
+                <form action="/customer/orders/<?= $order['id'] ?>/proof" method="POST" enctype="multipart/form-data" class="space-y-3">
+                    <?= csrf_field() ?>
                     <input type="file" name="proof_image" accept="image/jpeg,image/png,image/webp" required
                            class="input-field w-full px-4 py-3 rounded-lg text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-primary/80">
-                    <p class="text-xs text-gray-500 mt-1">Format: JPG, PNG, WebP. Maks 5MB.</p>
+                    <p class="text-xs text-gray-500">Format: JPG, PNG, WebP. Maks 5MB.</p>
+                    <button type="submit" class="px-4 py-2 rounded-lg text-sm font-semibold text-white btn-primary">
+                        Upload Bukti
+                    </button>
+                </form>
+
+                <?php if (empty($payment['proof_image'])): ?>
+                    <div class="mt-4">
+                        <form action="/customer/orders/<?= $order['id'] ?>/pay" method="POST" class="inline">
+                            <?= csrf_field() ?>
+                            <input type="hidden" name="payment_method" value="cash">
+                            <button type="submit" class="px-4 py-2 rounded-lg text-sm font-semibold text-gray-300 border border-white/20 hover:bg-white/10 transition-all">
+                                Ganti ke Cash
+                            </button>
+                        </form>
+                    </div>
+                <?php else: ?>
+                    <p class="text-xs text-gray-500 mt-4">Bukti sudah diupload — hubungi admin bila perlu ganti metode.</p>
+                <?php endif; ?>
+
+            <?php else: ?>
+                <p class="text-sm text-gray-400 mb-4">Pilih metode pembayaran:</p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <form action="/customer/orders/<?= $order['id'] ?>/pay" method="POST">
+                        <?= csrf_field() ?>
+                        <input type="hidden" name="payment_method" value="qris">
+                        <button type="submit" class="w-full p-4 rounded-lg border border-white/10 hover:border-primary/50 hover:bg-primary/10 transition-all text-left">
+                            <p class="font-medium">QRIS</p>
+                            <p class="text-xs text-gray-400">Scan & upload bukti</p>
+                        </button>
+                    </form>
+                    <form action="/customer/orders/<?= $order['id'] ?>/pay" method="POST">
+                        <?= csrf_field() ?>
+                        <input type="hidden" name="payment_method" value="cash">
+                        <button type="submit" class="w-full p-4 rounded-lg border border-white/10 hover:border-primary/50 hover:bg-primary/10 transition-all text-left">
+                            <p class="font-medium">Cash / Bayar di Tempat</p>
+                            <p class="text-xs text-gray-400">Tunai saat ambil/diantar</p>
+                        </button>
+                    </form>
                 </div>
-                <button type="submit" class="px-4 py-2 rounded-lg text-sm font-semibold text-white btn-primary">
-                    Upload Bukti
-                </button>
-            </form>
+            <?php endif; ?>
         </div>
     <?php endif; ?>
 

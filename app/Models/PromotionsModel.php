@@ -61,25 +61,32 @@ class PromotionsModel extends Model
             return ['valid' => false, 'discount' => 0, 'message' => 'Kode promo sudah tidak berlaku'];
         }
 
-        if (isset($promo['usage_limit']) && $promo['used_count'] >= $promo['usage_limit']) {
+        if (!empty($promo['usage_limit']) && (int) $promo['used_count'] >= (int) $promo['usage_limit']) {
             return ['valid' => false, 'discount' => 0, 'message' => 'Kode promo sudah habis digunakan'];
         }
 
-        if ($promo['min_order'] > 0 && $orderTotal < $promo['min_order']) {
-            return ['valid' => false, 'discount' => 0, 'message' => 'Minimum order Rp ' . number_format($promo['min_order'], 0, ',', '.')];
+        $minOrder = (float) ($promo['min_order'] ?? 0);
+        if ($minOrder > 0 && $orderTotal < $minOrder) {
+            return ['valid' => false, 'discount' => 0, 'message' => 'Minimum order Rp ' . number_format($minOrder, 0, ',', '.')];
         }
 
         $discount = 0;
         if ($promo['discount_type'] === 'percentage') {
-            $discount = $orderTotal * ($promo['discount_value'] / 100);
-            if (isset($promo['max_discount']) && $promo['max_discount'] > 0) {
-                $discount = min($discount, $promo['max_discount']);
+            $discount = $orderTotal * ((float) $promo['discount_value'] / 100);
+            $maxDiscount = (float) ($promo['max_discount'] ?? 0);
+            if ($maxDiscount > 0) {
+                $discount = min($discount, $maxDiscount);
             }
         } else {
-            $discount = $promo['discount_value'];
+            $discount = (float) $promo['discount_value'];
         }
 
         $discount = min($discount, $orderTotal);
+        $discount = (float) round($discount);
+
+        if ($discount <= 0) {
+            return ['valid' => false, 'discount' => 0, 'message' => 'Diskon tidak valid'];
+        }
 
         return [
             'valid'    => true,
@@ -96,7 +103,7 @@ class PromotionsModel extends Model
     {
         $this->db->table($this->table)
                   ->where('id', $promoId)
-                  ->set('used_count', 'used_count + 1', false)
+                  ->set('used_count', 'COALESCE(used_count, 0) + 1', false)
                   ->update();
     }
 }

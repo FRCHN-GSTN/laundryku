@@ -41,8 +41,9 @@ class Admin extends BaseController
         $search = $this->request->getGet('search');
 
         $builder = $this->orderModel->builder();
-        $builder->select('orders.*, users.name as user_name, users.phone as user_phone');
+        $builder->select('orders.*, users.name as user_name, users.phone as user_phone, payments.status as payment_status, payments.payment_method');
         $builder->join('users', 'users.id = orders.user_id');
+        $builder->join('payments', 'payments.order_id = orders.id', 'left');
 
         if ($status) {
             $builder->where('orders.status', $status);
@@ -82,6 +83,7 @@ class Admin extends BaseController
             'items' => $this->orderItemModel->getOrderItems($orderId),
             'user' => $this->userModel->find($order['user_id']),
             'statusHistory' => $this->orderModel->getStatusHistory($orderId),
+            'payment' => (new \App\Models\PaymentModel())->getPaymentByOrder($orderId),
             'validNextStatuses' => $this->orderModel->isValidTransition($order['status'], '')
                 ? array_keys(array_filter(
                     \ReflectionClass::getConstantValue($this->orderModel, 'validTransitions')[$order['status']] ?? [],
@@ -129,28 +131,145 @@ class Admin extends BaseController
             return redirect()->to('/admin/orders')->with('error', 'Pesanan tidak ditemukan');
         }
 
-        $confirmedWeight = (float) $this->request->getPost('confirmed_weight');
-        $confirmedPrice = (float) $this->request->getPost('confirmed_price');
-
-        if ($confirmedWeight <= 0 || $confirmedPrice <= 0) {
-            return redirect()->back()->with('error', 'Berat dan harga harus lebih dari 0');
+        if (!in_array($order['status'], ['pending', 'confirmed'], true)) {
+            return redirect()->back()->with('error', 'Konfirmasi berat hanya untuk pesanan menunggu/dikonfirmasi');
         }
+
+        $confirmedWeight = (float) $this->request->getPost('confirmed_weight');
+
+        if ($confirmedWeight <= 0) {
+            return redirect()->back()->with('error', 'Berat harus lebih dari 0');
+        }
+
+        if ($confirmedWeight > 500) {
+            return redirect()->back()->with('error', 'Berat maksimal 500 kg');
+        }
+
+        $calc = $this->calculateConfirmedPrice($order, $confirmedWeight);
+
+        if ($calc['gross'] <= 0) {
+            return redirect()->back()->with('error', 'Harga final harus lebih dari 0');
+        }
+
+        $postPrice = $this->request->getPost('confirmed_price');
+        $autoNet = $calc['net'];
+        $confirmedPrice = $autoNet;
+
+        if ($postPrice !== null && $postPrice !== '') {
+            $manual = (float) $postPrice;
+            $discount = (float) ($order['discount_amount'] ?? 0);
+            // Manual price = net (setelah diskon), valid 1..gross
+            if ($manual > 0 && $manual <= $calc['gross']) {
+                $confirmedPrice = $manual;
+            } elseif ($manual <= 0) {
+                return redirect()->back()->with('error', 'Harga final setelah diskon harus lebih dari 0');
+            }
+        }
+
+        if ($confirmedPrice <= 0) {
+            return redirect()->back()->with('error', 'Harga final setelah diskon harus lebih dari 0');
+        }
+
+        $this->syncWeightItems($order, $confirmedWeight, $calc['estWeight'], $calc['weightPart']);
 
         $this->orderModel->confirmWeight($orderId, $confirmedWeight, $confirmedPrice);
 
-        // Log the weight confirmation
         $userName = session()->get('user_name') ?: 'Admin';
         $historyModel = new \App\Models\OrderStatusHistoryModel();
+        $priceNote = abs($confirmedPrice - $autoNet) > 0.01
+            ? sprintf('Harga manual Rp %s (otomatis Rp %s)', number_format($confirmedPrice, 0, ',', '.'), number_format($autoNet, 0, ',', '.'))
+            : sprintf('Harga: Rp %s%s', number_format($confirmedPrice, 0, ',', '.'), $calc['discount'] > 0 ? ' (setelah diskon Rp ' . number_format($calc['discount'], 0, ',', '.') . ')' : '');
+        $note = sprintf('Konfirmasi berat: %s kg, %s', $confirmedWeight, $priceNote);
         $historyModel->insert([
             'order_id'   => $orderId,
             'old_status' => $order['status'],
             'new_status' => $order['status'],
-            'note'       => "Konfirmasi berat: {$confirmedWeight}kg, Harga: Rp " . number_format($confirmedPrice, 0, ',', '.'),
+            'note'       => $note,
             'changed_by' => $userName,
             'created_at' => date('Y-m-d H:i:s'),
         ]);
 
         return redirect()->to('/admin/orders/' . $orderId)->with('success', 'Berat dan harga berhasil dikonfirmasi');
+    }
+
+    /**
+     * Hitung harga dari berat aktual.
+     * - Item kg diskalakan ke berat aktual
+     * - Item pcs tetap
+     * - Diskon promo dipotong dari gross → net = yang ditagihkan
+     *
+     * @return array{gross: float, discount: float, net: float, estWeight: float, weightPart: float}
+     */
+    private function calculateConfirmedPrice(array $order, float $confirmedWeight): array
+    {
+        $items = $this->orderItemModel->getOrderItems($order['id']);
+
+        $weightPart = 0.0;
+        $fixedPart  = 0.0;
+        $estWeight  = 0.0;
+
+        foreach ($items as $item) {
+            $subtotal = (float) $item['subtotal'];
+            $quantity = (float) $item['quantity'];
+
+            if (($item['unit'] ?? '') === 'kg') {
+                $weightPart += $subtotal;
+                $estWeight  += $quantity;
+            } else {
+                $fixedPart += $subtotal;
+            }
+        }
+
+        if ($estWeight <= 0 && ! empty($order['total_weight'])) {
+            $estWeight  = (float) $order['total_weight'];
+            $weightPart = (float) $order['total_price'];
+            $fixedPart  = 0.0;
+        }
+
+        if ($estWeight > 0) {
+            $gross = round($weightPart * ($confirmedWeight / $estWeight) + $fixedPart);
+        } else {
+            $gross = round((float) $order['total_price']);
+        }
+
+        // Terapkan diskon yang sudah disetujui saat order (dibatasi gross)
+        $discount = min((float) ($order['discount_amount'] ?? 0), $gross);
+        $net = max(0, $gross - $discount);
+
+        return [
+            'gross'     => $gross,
+            'discount'  => $discount,
+            'net'       => $net,
+            'estWeight' => $estWeight,
+            'weightPart'=> $weightPart,
+        ];
+    }
+
+    /**
+     * Update quantity & subtotal item kg agar konsisten dengan berat aktual.
+     */
+    private function syncWeightItems(array $order, float $confirmedWeight, float $estWeight, float $weightPart): void
+    {
+        if ($estWeight <= 0) {
+            return;
+        }
+
+        $scale = $confirmedWeight / $estWeight;
+        $items = $this->orderItemModel->getOrderItems($order['id']);
+
+        foreach ($items as $item) {
+            if (($item['unit'] ?? '') !== 'kg') {
+                continue;
+            }
+
+            $newQty = round((float) $item['quantity'] * $scale, 2);
+            $newSub = round((float) $item['subtotal'] * $scale);
+
+            $this->orderItemModel->update($item['id'], [
+                'quantity' => $newQty,
+                'subtotal' => $newSub,
+            ]);
+        }
     }
 
     public function updateAdminNotes($orderId)
@@ -174,7 +293,7 @@ class Admin extends BaseController
 
     public function createService()
     {
-        if ($this->request->getMethod() === 'post') {
+        if ($this->request->is('post')) {
             $rules = [
                 'name' => 'required',
                 'price' => 'required|numeric',
@@ -220,7 +339,7 @@ class Admin extends BaseController
             return redirect()->to('/admin/services')->with('error', 'Layanan tidak ditemukan');
         }
 
-        if ($this->request->getMethod() === 'post') {
+        if ($this->request->is('post')) {
             $rules = [
                 'name' => 'required',
                 'price' => 'required|numeric',
@@ -311,7 +430,7 @@ class Admin extends BaseController
             'totalRevenue' => $this->orderModel->where('DATE(orders.created_at) >=', $startDate)
                                                 ->where('DATE(orders.created_at) <=', $endDate)
                                                 ->where('orders.status', 'completed')
-                                                ->select('SUM(orders.total_price) as total')
+                                                ->select('SUM(COALESCE(orders.confirmed_price, orders.final_price, orders.total_price)) as total')
                                                 ->first(),
             'pageTitle' => 'Laporan',
         ];

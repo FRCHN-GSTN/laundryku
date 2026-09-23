@@ -24,8 +24,15 @@ class Customer extends BaseController
     public function dashboard()
     {
         $userId = session()->get('user_id');
+        $builder = $this->orderModel->builder();
+        $builder->select('orders.*, payments.status as payment_status, payments.payment_method');
+        $builder->join('payments', 'payments.order_id = orders.id', 'left');
+        $builder->where('orders.user_id', $userId);
+        $builder->orderBy('orders.created_at', 'DESC');
+        $orders = $builder->get()->getResultArray();
+
         $data = [
-            'orders' => $this->orderModel->getUserOrders($userId),
+            'orders' => $orders,
             'stats' => $this->orderModel->getStats($userId),
             'pageTitle' => 'Dashboard',
         ];
@@ -71,8 +78,11 @@ class Customer extends BaseController
             if ($quantity < 0.5) {
                 return redirect()->back()->withInput()->with('error', 'Jumlah minimal 0.5 untuk layanan: ' . $service['name']);
             }
+            if ($quantity > 500) {
+                return redirect()->back()->withInput()->with('error', 'Jumlah maksimal 500 untuk layanan: ' . $service['name']);
+            }
 
-            $subtotal = $service['price'] * $quantity;
+            $subtotal = round((float) $service['price'] * $quantity);
             $totalPrice += $subtotal;
             if ($service['unit'] === 'kg') {
                 $totalWeight += $quantity;
@@ -80,8 +90,8 @@ class Customer extends BaseController
 
             $orderItems[] = [
                 'service_id' => $serviceId,
-                'quantity' => $quantity,
-                'subtotal' => $subtotal,
+                'quantity'   => $quantity,
+                'subtotal'   => $subtotal,
             ];
         }
 
@@ -92,6 +102,7 @@ class Customer extends BaseController
         // Apply promo code
         $discountAmount = 0;
         $promoId = null;
+        $promoModel = null;
         $finalPrice = $totalPrice;
 
         if (!empty($promoCode)) {
@@ -99,7 +110,8 @@ class Customer extends BaseController
             $promoResult = $promoModel->validateCode($promoCode, $totalPrice);
 
             if ($promoResult['valid']) {
-                $discountAmount = $promoResult['discount'];
+                $discountAmount = (int) round($promoResult['discount']);
+                $discountAmount = min($discountAmount, $totalPrice);
                 $promoId = $promoResult['promo']['id'];
                 $finalPrice = $totalPrice - $discountAmount;
             } else {
@@ -143,8 +155,15 @@ class Customer extends BaseController
     public function orders()
     {
         $userId = session()->get('user_id');
+        $builder = $this->orderModel->builder();
+        $builder->select('orders.*, payments.status as payment_status, payments.payment_method');
+        $builder->join('payments', 'payments.order_id = orders.id', 'left');
+        $builder->where('orders.user_id', $userId);
+        $builder->orderBy('orders.created_at', 'DESC');
+        $orders = $builder->get()->getResultArray();
+
         $data = [
-            'orders' => $this->orderModel->getUserOrders($userId),
+            'orders' => $orders,
             'pageTitle' => 'Riwayat Pesanan',
         ];
 
@@ -160,10 +179,15 @@ class Customer extends BaseController
             return redirect()->to('/customer/orders')->with('error', 'Pesanan tidak ditemukan');
         }
 
+        $settingsModel = new \App\Models\SettingsModel();
+
         $data = [
             'order' => $order,
             'items' => $this->orderItemModel->getOrderItems($orderId),
             'statusHistory' => $this->orderModel->getStatusHistory($orderId),
+            'payment' => (new PaymentModel())->getPaymentByOrder($orderId),
+            'qris_image' => $settingsModel->getValue('qris_image'),
+            'qris_string' => $settingsModel->getValue('qris_static_string'),
             'pageTitle' => 'Detail Pesanan',
         ];
 
@@ -223,6 +247,60 @@ class Customer extends BaseController
         return redirect()->to('/customer/profile')->with('success', 'Profil berhasil diupdate');
     }
 
+    public function choosePayment($orderId)
+    {
+        $userId = session()->get('user_id');
+        $order = $this->orderModel->where('id', $orderId)->where('user_id', $userId)->first();
+
+        if (!$order) {
+            return redirect()->back()->with('error', 'Pesanan tidak ditemukan');
+        }
+
+        if ($order['status'] === 'cancelled') {
+            return redirect()->back()->with('error', 'Pesanan dibatalkan');
+        }
+
+        $method = $this->request->getPost('payment_method');
+        if (!in_array($method, ['cash', 'qris'], true)) {
+            return redirect()->back()->with('error', 'Metode pembayaran tidak valid');
+        }
+
+        $paymentModel = new PaymentModel();
+        $payment = $paymentModel->getPaymentByOrder($orderId);
+        $amount = \App\Models\OrderModel::billableAmount($order);
+
+        if ($payment && $payment['status'] === 'paid') {
+            return redirect()->back()->with('error', 'Pembayaran sudah lunas');
+        }
+
+        $payload = [
+            'order_id' => $orderId,
+            'amount' => $amount,
+            'payment_method' => $method,
+            'status' => 'pending',
+        ];
+
+        if ($payment) {
+            if ($method === 'cash') {
+                $payload['payment_date'] = null;
+                $payload['proof_image'] = null;
+            } elseif (empty($payment['payment_date'])) {
+                $payload['payment_date'] = null;
+            }
+            $payload['status'] = 'pending';
+            $paymentModel->update($payment['id'], $payload);
+        } else {
+            $payload['payment_date'] = null;
+            $paymentModel->insert($payload);
+        }
+
+        $msg = $method === 'qris'
+            ? 'Pilihan QRIS disimpan. Silakan scan QR dan upload bukti.'
+            : 'Pilihan bayar di tempat disimpan. Bayar tunai saat ambil/diantar.';
+
+        return redirect()->to('/customer/orders/' . $orderId)->with('success', $msg);
+    }
+
     public function uploadPaymentProof($orderId)
     {
         $userId = session()->get('user_id');
@@ -230,6 +308,21 @@ class Customer extends BaseController
 
         if (!$order) {
             return redirect()->back()->with('error', 'Pesanan tidak ditemukan');
+        }
+
+        if ($order['status'] === 'cancelled') {
+            return redirect()->back()->with('error', 'Pesanan dibatalkan');
+        }
+
+        $paymentModel = new PaymentModel();
+        $payment = $paymentModel->getPaymentByOrder($orderId);
+
+        if ($payment && $payment['status'] === 'paid') {
+            return redirect()->back()->with('error', 'Pembayaran sudah lunas');
+        }
+
+        if ($payment && ($payment['payment_method'] ?? '') === 'cash') {
+            return redirect()->back()->with('error', 'Metode cash — tidak perlu upload bukti');
         }
 
         $proofFile = $this->request->getFile('proof_image');
@@ -255,22 +348,27 @@ class Customer extends BaseController
         $newName = 'proof_' . $orderId . '_' . time() . '.' . $proofFile->getExtension();
         $proofFile->move($uploadPath, $newName);
 
-        $paymentModel = new PaymentModel();
-        $payment = $paymentModel->getPaymentByOrder($orderId);
+        $amount = \App\Models\OrderModel::billableAmount($order);
 
         if ($payment) {
-            $paymentModel->update($payment['id'], ['proof_image' => '/uploads/proofs/' . $newName]);
+            $paymentModel->update($payment['id'], [
+                'amount' => $amount,
+                'proof_image' => '/uploads/proofs/' . $newName,
+                'payment_method' => 'qris',
+                'payment_date' => null,
+                'status' => 'pending',
+            ]);
         } else {
             $paymentModel->insert([
                 'order_id' => $orderId,
-                'amount' => $order['confirmed_price'] ?? $order['total_price'],
-                'payment_method' => 'transfer',
-                'payment_date' => date('Y-m-d H:i:s'),
+                'amount' => $amount,
+                'payment_method' => 'qris',
+                'payment_date' => null,
                 'status' => 'pending',
                 'proof_image' => '/uploads/proofs/' . $newName,
             ]);
         }
 
-        return redirect()->to('/customer/orders/' . $orderId)->with('success', 'Bukti pembayaran berhasil diupload');
+        return redirect()->to('/customer/orders/' . $orderId)->with('success', 'Bukti pembayaran berhasil diupload. Menunggu verifikasi admin.');
     }
 }

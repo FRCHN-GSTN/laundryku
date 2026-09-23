@@ -92,10 +92,14 @@ Atau konfigurasi web server untuk pointing ke folder `public/`.
 
 ## Akun Default
 
-| Role | Email | Password |
-|------|-------|----------|
-| Admin | admin@laundryku.com | admin123 |
-| Customer | - | Register di `/auth/register` |
+Data akun awal dibuat oleh seeder (`php spark db:seed DatabaseSeeder`) untuk keperluan setup lokal.
+
+| Role | Cara masuk |
+|------|------------|
+| Admin | Email admin hasil seeder — **ganti password segera** setelah login pertama |
+| Customer | Register di `/auth/register` |
+
+> **Keamanan:** jangan pakai kredensial bawaan di produksi. Simpan kredensial database & JWT di `.env` (tidak ikut di-commit).
 
 ## Struktur Database
 
@@ -123,7 +127,7 @@ Jika proyek ini bermanfaat, kamu bisa mendukung pengembangannya melalui QRIS:
 
 <p align="center">
   <b>FRCHN - DIGITAL PAYMENT</b><br>
-  NMID: ID1025446232395
+  <i>Kode merchant QRIS tersedia di dashboard pembayaran / pengaturan admin — tidak dicantumkan di repo.</i>
 </p>
 
 ---

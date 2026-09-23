@@ -23,7 +23,7 @@ class Auth extends BaseController
     {
         if (session()->get('user_id')) {
             $role = session()->get('user_role');
-            if ($role === 'admin') {
+            if (in_array($role, ['admin', 'staff'], true)) {
                 return redirect()->to('/admin/dashboard');
             }
             return redirect()->to('/customer/dashboard');
@@ -53,6 +53,10 @@ class Auth extends BaseController
             return redirect()->back()->withInput()->with('error', 'Email atau password salah');
         }
 
+        if (isset($user['is_active']) && ! $user['is_active']) {
+            return redirect()->back()->withInput()->with('error', 'Akun Anda dinonaktifkan. Hubungi admin.');
+        }
+
         session()->regenerate();
 
         $sessionData = [
@@ -67,7 +71,7 @@ class Auth extends BaseController
 
         log_message('info', 'Login success: ' . $email . ' (role: ' . $user['role'] . ')');
 
-        if ($user['role'] === 'admin') {
+        if (in_array($user['role'], ['admin', 'staff'], true)) {
             return redirect()->to('/admin/dashboard');
         }
 
@@ -76,7 +80,7 @@ class Auth extends BaseController
 
     public function register()
     {
-        if ($this->request->getMethod() !== 'post') {
+        if (! $this->request->is('post')) {
             return view('auth/register');
         }
 
@@ -93,12 +97,13 @@ class Auth extends BaseController
         }
 
         $userData = [
-            'name'     => $this->request->getPost('name'),
-            'email'    => $this->request->getPost('email'),
-            'password' => password_hash($this->request->getPost('password'), PASSWORD_DEFAULT),
-            'phone'    => $this->request->getPost('phone'),
-            'address'  => $this->request->getPost('address'),
-            'role'     => 'customer',
+            'name'      => $this->request->getPost('name'),
+            'email'     => $this->request->getPost('email'),
+            'password'  => password_hash($this->request->getPost('password'), PASSWORD_DEFAULT),
+            'phone'     => $this->request->getPost('phone'),
+            'address'   => $this->request->getPost('address'),
+            'role'      => 'customer',
+            'is_active' => 1,
         ];
 
         if ($this->userModel->insert($userData)) {

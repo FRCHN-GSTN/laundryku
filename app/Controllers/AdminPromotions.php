@@ -25,7 +25,7 @@ class AdminPromotions extends BaseController
 
     public function create()
     {
-        if ($this->request->getMethod() === 'post') {
+        if ($this->request->is('post')) {
             $rules = [
                 'title' => 'required|max_length[150]',
                 'discount_type' => 'required|in_list[percentage,fixed]',
@@ -45,6 +45,9 @@ class AdminPromotions extends BaseController
                 'discount_value' => $this->request->getPost('discount_value'),
                 'min_order' => $this->request->getPost('min_order') ?: null,
                 'max_discount' => $this->request->getPost('max_discount') ?: null,
+                'usage_limit' => $this->request->getPost('usage_limit') !== null && $this->request->getPost('usage_limit') !== ''
+                    ? (int) $this->request->getPost('usage_limit')
+                    : null,
                 'promo_code' => $this->request->getPost('promo_code') ?: null,
                 'start_date' => $this->request->getPost('start_date'),
                 'end_date' => $this->request->getPost('end_date'),
@@ -68,7 +71,7 @@ class AdminPromotions extends BaseController
             return redirect()->to('/admin/promotions')->with('error', 'Promo tidak ditemukan');
         }
 
-        if ($this->request->getMethod() === 'post') {
+        if ($this->request->is('post')) {
             $rules = [
                 'title' => 'required|max_length[150]',
                 'discount_type' => 'required|in_list[percentage,fixed]',
@@ -88,6 +91,9 @@ class AdminPromotions extends BaseController
                 'discount_value' => $this->request->getPost('discount_value'),
                 'min_order' => $this->request->getPost('min_order') ?: null,
                 'max_discount' => $this->request->getPost('max_discount') ?: null,
+                'usage_limit' => $this->request->getPost('usage_limit') !== null && $this->request->getPost('usage_limit') !== ''
+                    ? (int) $this->request->getPost('usage_limit')
+                    : null,
                 'promo_code' => $this->request->getPost('promo_code') ?: null,
                 'start_date' => $this->request->getPost('start_date'),
                 'end_date' => $this->request->getPost('end_date'),

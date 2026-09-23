@@ -4,15 +4,15 @@
 
 <div class="grid grid-cols-3 gap-4 mb-8">
     <div class="card rounded-lg p-4">
-        <p class="text-gray-400 text-xs mb-1">Total Pesanan</p>
+        <p class="text-gray-400 text-xs mb-1">Pesanan Hari Ini</p>
         <p class="text-2xl font-bold text-primary"><?= esc($stats['total_today'] ?? 0) ?></p>
     </div>
     <div class="card rounded-lg p-4">
-        <p class="text-gray-400 text-xs mb-1">Sedang Diproses</p>
+        <p class="text-gray-400 text-xs mb-1">Sedang Diproses (hari ini)</p>
         <p class="text-2xl font-bold text-blue-400"><?= esc($stats['processing'] ?? 0) ?></p>
     </div>
     <div class="card rounded-lg p-4">
-        <p class="text-gray-400 text-xs mb-1">Selesai</p>
+        <p class="text-gray-400 text-xs mb-1">Selesai (hari ini)</p>
         <p class="text-2xl font-bold text-green-400"><?= esc($stats['completed'] ?? 0) ?></p>
     </div>
 </div>
@@ -54,6 +54,7 @@
                         <th class="pb-3">Kode Order</th>
                         <th class="pb-3">Tanggal</th>
                         <th class="pb-3">Total</th>
+                        <th class="pb-3">Bayar</th>
                         <th class="pb-3">Status</th>
                         <th class="pb-3">Aksi</th>
                     </tr>
@@ -63,7 +64,18 @@
                         <tr class="border-t border-white/10">
                             <td class="py-3 font-medium"><?= esc($order['order_code']) ?></td>
                             <td class="py-3 text-gray-400 text-sm"><?= date('d M Y', strtotime($order['created_at'])) ?></td>
-                            <td class="py-3">Rp <?= number_format($order['confirmed_price'] ?? $order['total_price'], 0, ',', '.') ?></td>
+                            <td class="py-3">Rp <?= number_format(\App\Models\OrderModel::billableAmount($order), 0, ',', '.') ?></td>
+                            <td class="py-3">
+                                <?php if (($order['payment_status'] ?? '') === 'paid'): ?>
+                                    <span class="status-badge bg-green-500/20 text-green-400">Lunas</span>
+                                <?php elseif (($order['payment_method'] ?? '') === 'cash' && !empty($order['payment_status'])): ?>
+                                    <span class="status-badge bg-amber-500/20 text-amber-400">Bayar di Tempat</span>
+                                <?php elseif (!empty($order['payment_status'])): ?>
+                                    <span class="status-badge bg-amber-500/20 text-amber-400">Menunggu Verifikasi</span>
+                                <?php else: ?>
+                                    <span class="status-badge bg-gray-500/20 text-gray-400">Belum dipilih</span>
+                                <?php endif; ?>
+                            </td>
                             <td class="py-3">
                                 <span class="status-badge <?= \App\Models\OrderModel::$statusColors[$order['status']] ?? '' ?>">
                                     <?= esc(\App\Models\OrderModel::$statusLabels[$order['status']] ?? $order['status']) ?>

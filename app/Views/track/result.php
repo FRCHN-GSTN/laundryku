@@ -36,22 +36,8 @@
                     <p class="text-gray-400 text-sm mt-1">Dipesan <?= date('d M Y H:i', strtotime($order['created_at'])) ?></p>
                 </div>
                 <?php
-                $statusColors = [
-                    'pending' => 'bg-gray-500/20 text-gray-400',
-                    'confirmed' => 'bg-[#865DFF]/20 text-[#865DFF]',
-                    'washing' => 'bg-blue-500/20 text-blue-400',
-                    'drying' => 'bg-blue-500/20 text-blue-400',
-                    'ironing' => 'bg-blue-500/20 text-blue-400',
-                    'ready' => 'bg-amber-500/20 text-amber-400',
-                    'delivered' => 'bg-amber-500/20 text-amber-400',
-                    'completed' => 'bg-green-500/20 text-green-400',
-                    'cancelled' => 'bg-red-500/20 text-red-400',
-                ];
-                $statusLabels = [
-                    'pending' => 'Menunggu', 'confirmed' => 'Dikonfirmasi', 'washing' => 'Dicuci',
-                    'drying' => 'Dijemur', 'ironing' => 'Disetrika', 'ready' => 'Siap Diambil',
-                    'delivered' => 'Diantar', 'completed' => 'Selesai', 'cancelled' => 'Dibatalkan',
-                ];
+                $statusLabels = \App\Models\OrderModel::$statusLabels;
+                $statusColors = \App\Models\OrderModel::$statusColors;
                 ?>
                 <span class="px-3 py-1 rounded-full text-xs font-semibold <?= $statusColors[$order['status']] ?? '' ?>">
                     <?= $statusLabels[$order['status']] ?? $order['status'] ?>
@@ -69,8 +55,8 @@
         <div class="card rounded-2xl p-6 mb-6">
             <h3 class="font-semibold mb-6">Status Pesanan</h3>
             <?php
-            $steps = ['pending', 'confirmed', 'washing', 'drying', 'ironing', 'ready', 'completed'];
-            $stepLabels = ['Pesanan', 'Dikonfirmasi', 'Dicuci', 'Dijemur', 'Disetrika', 'Siap', 'Selesai'];
+            $steps = ['pending', 'confirmed', 'washing', 'drying', 'ironing', 'ready', 'delivered', 'completed'];
+            $stepLabels = ['Pesanan', 'Dikonfirmasi', 'Dicuci', 'Dijemur', 'Disetrika', 'Siap', 'Diantar', 'Selesai'];
             $currentIndex = array_search($order['status'], $steps);
             if ($currentIndex === false) $currentIndex = -1;
             ?>
@@ -108,8 +94,14 @@
                 </div>
                 <div class="flex justify-between">
                     <span class="text-gray-400">Total</span>
-                    <span class="font-bold text-[#865DFF]">Rp <?= number_format($order['final_price'] ?? $order['total_price'], 0, ',', '.') ?></span>
+                    <span class="font-bold text-[#865DFF]">Rp <?= number_format(\App\Models\OrderModel::billableAmount($order), 0, ',', '.') ?></span>
                 </div>
+                <?php if (! empty($order['confirmed_weight'])): ?>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Berat</span>
+                        <span><?= esc($order['confirmed_weight']) ?> kg</span>
+                    </div>
+                <?php endif; ?>
             </div>
         </div>
 
@@ -122,8 +114,14 @@
                         <div class="flex gap-3 text-sm">
                             <div class="w-2 h-2 rounded-full mt-2 <?= $i === 0 ? 'bg-[#865DFF]' : 'bg-white/20' ?>"></div>
                             <div>
-                                <p class="font-medium"><?= $statusLabels[$h['new_status']] ?? $h['new_status'] ?></p>
-                                <?php if ($h['note']): ?><p class="text-gray-400 text-xs"><?= esc($h['note']) ?></p><?php endif; ?>
+                                <p class="font-medium"><?= esc(\App\Models\OrderModel::$statusLabels[$h['new_status']] ?? $h['new_status']) ?></p>
+                                <?php
+                                // Sembunyikan catatan internal admin (berat/harga) dari halaman publik
+                                $note = (string) ($h['note'] ?? '');
+                                $isInternal = str_contains($note, 'Konfirmasi berat') || str_contains($note, 'Harga:') || str_contains($note, 'Harga manual');
+                                if ($note !== '' && ! $isInternal): ?>
+                                    <p class="text-gray-400 text-xs"><?= esc($note) ?></p>
+                                <?php endif; ?>
                                 <p class="text-gray-500 text-xs"><?= date('d M H:i', strtotime($h['created_at'])) ?></p>
                             </div>
                         </div>

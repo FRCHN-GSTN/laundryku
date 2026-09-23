@@ -77,7 +77,7 @@
                                 <tr class="border-t border-white/10">
                                     <td class="py-3"><?= esc($item['service_name'] ?? $item['name'] ?? '-') ?></td>
                                     <td class="py-3"><?= esc($item['quantity']) ?> <?= esc($item['unit'] ?? 'kg') ?></td>
-                                    <td class="py-3">Rp <?= number_format($item['price'] ?? 0, 0, ',', '.') ?></td>
+                                    <td class="py-3">Rp <?= number_format($item['quantity'] > 0 ? $item['subtotal'] / $item['quantity'] : 0, 0, ',', '.') ?></td>
                                     <td class="py-3 text-right">Rp <?= number_format($item['subtotal'] ?? 0, 0, ',', '.') ?></td>
                                 </tr>
                             <?php endforeach; ?>
@@ -90,7 +90,7 @@
                     <tfoot>
                         <tr class="border-t border-white/20">
                             <td colspan="3" class="py-3 font-semibold">Total</td>
-                            <td class="py-3 text-right font-bold text-primary text-lg">Rp <?= number_format($order['total_price'], 0, ',', '.') ?></td>
+                            <td class="py-3 text-right font-bold text-primary text-lg">Rp <?= number_format(\App\Models\OrderModel::billableAmount($order), 0, ',', '.') ?></td>
                         </tr>
                     </tfoot>
                 </table>
@@ -109,8 +109,10 @@
                         <span class="text-gray-400">Status</span>
                         <?php if ($payment['status'] === 'paid'): ?>
                             <span class="status-badge bg-green-500/20 text-green-400">Lunas</span>
+                        <?php elseif (($payment['payment_method'] ?? '') === 'cash'): ?>
+                            <span class="status-badge bg-amber-500/20 text-amber-400">Bayar di Tempat</span>
                         <?php else: ?>
-                            <span class="status-badge bg-amber-500/20 text-amber-400">Menunggu</span>
+                            <span class="status-badge bg-amber-500/20 text-amber-400">Menunggu Verifikasi</span>
                         <?php endif; ?>
                     </div>
                     <div class="flex justify-between text-sm">
@@ -119,68 +121,61 @@
                     </div>
                     <div class="flex justify-between text-sm">
                         <span class="text-gray-400">Tanggal Bayar</span>
-                        <span class="font-medium"><?= $payment['payment_date'] ? date('d M Y H:i', strtotime($payment['payment_date'])) : '-' ?></span>
+                        <span class="font-medium"><?= (($payment['payment_date'] ?? null) && ($payment['status'] ?? '') === 'paid') ? date('d M Y H:i', strtotime($payment['payment_date'])) : '-' ?></span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-400">Tagihan</span>
+                        <span class="font-semibold text-primary">Rp <?= number_format(\App\Models\OrderModel::billableAmount($order), 0, ',', '.') ?></span>
                     </div>
                 </div>
             <?php else: ?>
-                <p class="text-gray-400 text-sm text-center py-4">Belum ada pembayaran</p>
+                <p class="text-gray-400 text-sm text-center py-4">Pelanggan belum memilih metode pembayaran.</p>
             <?php endif; ?>
         </div>
 
-        <!-- Payment Method -->
-        <div class="card rounded-lg p-6">
-            <h3 class="text-lg font-semibold mb-4">Proses Pembayaran</h3>
-            <form method="POST" action="/admin/orders/<?= $order['id'] ?>/payment">
-                <?= csrf_field() ?>
+        <?php if (!empty($payment['proof_image'])): ?>
+            <div class="card rounded-lg p-6">
+                <h3 class="text-lg font-semibold mb-3">
+                    <?= ($payment['status'] ?? '') === 'paid' ? 'Bukti Pembayaran' : 'Bukti dari Pelanggan' ?>
+                </h3>
+                <a href="<?= esc($payment['proof_image']) ?>" target="_blank">
+                    <img src="<?= esc($payment['proof_image']) ?>" alt="Bukti" class="w-full max-h-64 object-contain rounded-lg bg-white/5">
+                </a>
+            </div>
+        <?php endif; ?>
 
-                <div class="space-y-3 mb-6">
-                    <label class="flex items-center p-4 rounded-lg border border-white/10 cursor-pointer hover:border-primary/50 transition-all has-[:checked]:border-primary has-[:checked]:bg-primary/10">
-                        <input type="radio" name="payment_method" value="cash" class="hidden" required>
-                        <div class="w-5 h-5 rounded-full border-2 border-gray-400 mr-3 flex items-center justify-center shrink-0 has-[:checked]:border-primary has-[:checked]:bg-primary">
-                            <svg class="w-3 h-3 text-white hidden has-[:checked]:block" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                            </svg>
-                        </div>
-                        <div>
-                            <p class="font-medium">Cash / Bayar di Tempat</p>
-                            <p class="text-xs text-gray-400">Pelanggan bayar tunai saat cucian diantar</p>
-                        </div>
-                    </label>
+        <!-- Verifikasi (aksi utama admin) -->
+        <?php if ($payment && $payment['status'] === 'pending' && $order['status'] !== 'cancelled'): ?>
+            <div class="card rounded-lg p-6">
+                <h3 class="text-lg font-semibold mb-2">Verifikasi</h3>
+                <p class="text-sm text-gray-400 mb-4">
+                    <?= ($payment['payment_method'] ?? '') === 'qris'
+                        ? 'Pastikan bukti/transfer sesuai, lalu tandai lunas.'
+                        : 'Uang diterima di tempat? Tandai lunas.' ?>
+                </p>
+                <form method="POST" action="/admin/orders/<?= $order['id'] ?>/payment/mark-paid"
+                      onsubmit="return confirm('Tandai pembayaran ini lunas?')">
+                    <?= csrf_field() ?>
+                    <button type="submit" class="w-full py-3 rounded-lg font-semibold text-white bg-green-600 hover:bg-green-700 transition-all">
+                        Tandai Lunas
+                    </button>
+                </form>
+            </div>
+        <?php endif; ?>
 
-                    <label class="flex items-center p-4 rounded-lg border border-white/10 cursor-pointer hover:border-primary/50 transition-all has-[:checked]:border-primary has-[:checked]:bg-primary/10">
-                        <input type="radio" name="payment_method" value="qris" class="hidden" required>
-                        <div class="w-5 h-5 rounded-full border-2 border-gray-400 mr-3 flex items-center justify-center shrink-0 has-[:checked]:border-primary has-[:checked]:bg-primary">
-                            <svg class="w-3 h-3 text-white hidden has-[:checked]:block" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                            </svg>
-                        </div>
-                        <div>
-                            <p class="font-medium">QRIS</p>
-                            <p class="text-xs text-gray-400">Scan QR Code untuk pembayaran digital</p>
-                        </div>
-                    </label>
-                </div>
-
-                <button type="submit" class="btn-primary w-full py-3 rounded-lg font-semibold text-white">
-                    Proses Pembayaran
-                </button>
-            </form>
-        </div>
-
-        <!-- QRIS Display (if QRIS selected and pending) -->
-        <?php if ($payment && $payment['payment_method'] === 'qris' && $payment['status'] === 'pending'): ?>
+        <!-- QRIS Display (jika QRIS pending) -->
+        <?php if ($payment && $payment['payment_method'] === 'qris' && $payment['status'] === 'pending' && $order['status'] !== 'cancelled'): ?>
             <div class="card rounded-lg p-6 text-center">
-                <h3 class="text-lg font-semibold mb-4">Scan QRIS</h3>
+                <h3 class="text-lg font-semibold mb-4">QRIS</h3>
 
                 <?php if (!empty($qris_image)): ?>
-                    <!-- Tampilkan gambar QRIS statis -->
                     <div class="bg-white p-4 rounded-lg inline-block mb-4">
                         <img src="<?= esc($qris_image) ?>" alt="QRIS Static" class="w-48 h-48 object-contain">
                     </div>
                 <?php elseif (!empty($qris_string)): ?>
-                    <!-- Generate QR dinamis dari string QRIS -->
                     <?php
-                    $dynamicQris = \App\Libraries\Qris::convertToDynamic($qris_string, $order['total_price']);
+                    $payAmount = (int) round(\App\Models\OrderModel::billableAmount($order));
+                    $dynamicQris = \App\Libraries\Qris::convertToDynamic($qris_string, $payAmount);
                     $qrUrl = \App\Libraries\Qris::getQrUrl($dynamicQris);
                     ?>
                     <div class="bg-white p-4 rounded-lg inline-block mb-4">
@@ -196,8 +191,60 @@
                 <?php endif; ?>
 
                 <p class="text-sm text-gray-400 mb-2">Total Pembayaran</p>
-                <p class="text-2xl font-bold text-primary">Rp <?= number_format($order['total_price'], 0, ',', '.') ?></p>
-                <p class="text-xs text-gray-400 mt-2">QRIS berlaku untuk sekali bayar</p>
+                <p class="text-2xl font-bold text-primary">Rp <?= number_format(\App\Models\OrderModel::billableAmount($order), 0, ',', '.') ?></p>
+                <p class="text-xs text-gray-400 mt-2">Pelanggan scan & upload bukti di halaman pesanan mereka</p>
+            </div>
+        <?php endif; ?>
+
+        <!-- Override metode (sekunder — offline / koreksi) -->
+        <?php if ($order['status'] !== 'cancelled' && ($payment['status'] ?? '') !== 'paid'): ?>
+            <div class="card rounded-lg p-6">
+                <h3 class="text-lg font-semibold mb-2">Override Metode</h3>
+                <p class="text-xs text-gray-400 mb-4">
+                    <?php if (!$payment): ?>
+                        Untuk pesanan offline / kasir — pelanggan belum memilih metode.
+                    <?php else: ?>
+                        Hanya bila perlu koreksi atau ganti metode.
+                    <?php endif; ?>
+                </p>
+
+                <form method="POST" action="/admin/orders/<?= $order['id'] ?>/payment">
+                    <?= csrf_field() ?>
+
+                    <div class="space-y-3 mb-4">
+                        <label class="flex items-center p-4 rounded-lg border border-white/10 cursor-pointer hover:border-primary/50 transition-all has-[:checked]:border-primary has-[:checked]:bg-primary/10">
+                            <input type="radio" name="payment_method" value="cash" class="hidden" required
+                                   <?= ($payment['payment_method'] ?? '') === 'cash' ? 'checked' : '' ?>>
+                            <div class="w-5 h-5 rounded-full border-2 border-gray-400 mr-3 flex items-center justify-center shrink-0 has-[:checked]:border-primary has-[:checked]:bg-primary">
+                                <svg class="w-3 h-3 text-white hidden has-[:checked]:block" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="font-medium">Cash / Bayar di Tempat</p>
+                                <p class="text-xs text-gray-400">Catat lunas — tanpa mengubah status pesanan</p>
+                            </div>
+                        </label>
+
+                        <label class="flex items-center p-4 rounded-lg border border-white/10 cursor-pointer hover:border-primary/50 transition-all has-[:checked]:border-primary has-[:checked]:bg-primary/10">
+                            <input type="radio" name="payment_method" value="qris" class="hidden" required
+                                   <?= ($payment['payment_method'] ?? '') === 'qris' ? 'checked' : '' ?>>
+                            <div class="w-5 h-5 rounded-full border-2 border-gray-400 mr-3 flex items-center justify-center shrink-0 has-[:checked]:border-primary has-[:checked]:bg-primary">
+                                <svg class="w-3 h-3 text-white hidden has-[:checked]:block" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="font-medium">QRIS</p>
+                                <p class="text-xs text-gray-400">Tunggu bukti / dana masuk, lalu Tandai Lunas</p>
+                            </div>
+                        </label>
+                    </div>
+
+                    <button type="submit" class="w-full py-2.5 rounded-lg text-sm font-semibold text-white border border-white/20 hover:bg-white/10 transition-all">
+                        Simpan Override Metode
+                    </button>
+                </form>
             </div>
         <?php endif; ?>
 

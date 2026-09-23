@@ -77,7 +77,7 @@
                                     <tr class="border-t border-white/10">
                                         <td class="py-3 font-medium"><?= esc($order['order_code']) ?></td>
                                         <td class="py-3 text-gray-400"><?= date('d M Y', strtotime($order['created_at'])) ?></td>
-                                        <td class="py-3">Rp <?= number_format($order['total_price'], 0, ',', '.') ?></td>
+                                        <td class="py-3">Rp <?= number_format(\App\Models\OrderModel::billableAmount($order), 0, ',', '.') ?></td>
                                         <td class="py-3">
                                             <?php
                                             $statusColors = [

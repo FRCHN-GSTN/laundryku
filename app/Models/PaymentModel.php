@@ -15,7 +15,7 @@ class PaymentModel extends Model
 
     protected $useTimestamps = true;
     protected $createdField = 'created_at';
-    protected $updatedField = null;
+    protected $updatedField = '';
 
     public function getPaymentByOrder($orderId)
     {

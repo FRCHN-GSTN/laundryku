@@ -38,7 +38,7 @@ class WhatsApp
         ];
 
         $status = $statusLabels[$newStatus] ?? $newStatus;
-        $price = number_format($order['confirmed_price'] ?? $order['total_price'], 0, ',', '.');
+        $price = number_format(\App\Models\OrderModel::billableAmount($order), 0, ',', '.');
         $estDate = $order['estimated_date'] ? date('d/m/Y', strtotime($order['estimated_date'])) : '-';
 
         $msg = "Halo! 👋\n";

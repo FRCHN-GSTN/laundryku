@@ -123,23 +123,27 @@
             </div>
 
             <nav class="space-y-1">
-                <a href="/customer/dashboard" class="sidebar-link block px-4 py-3 rounded-lg <?= uri_string() === '/customer/dashboard' ? 'active' : '' ?>">
+                <?php
+                $uri = uri_string();
+                $isActive = static fn (string $path): bool => $uri === $path || str_starts_with($uri, $path . '/');
+                ?>
+                <a href="/customer/dashboard" class="sidebar-link block px-4 py-3 rounded-lg <?= $isActive('customer/dashboard') ? 'active' : '' ?>">
                     <span class="flex items-center">
-                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-5 h-5 mr-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
                         </svg>
                         Dashboard
                     </span>
                 </a>
-                <a href="/customer/order/new" class="sidebar-link block px-4 py-3 rounded-lg <?= uri_string() === '/customer/order/new' ? 'active' : '' ?>">
+                <a href="/customer/order/new" class="sidebar-link block px-4 py-3 rounded-lg <?= $isActive('customer/order/new') ? 'active' : '' ?>">
                     <span class="flex items-center">
-                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-5 h-5 mr-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                         </svg>
                         Order Baru
                     </span>
                 </a>
-                <a href="/customer/orders" class="sidebar-link block px-4 py-3 rounded-lg <?= strpos(uri_string(), '/customer/orders') !== false && uri_string() !== '/customer/order/new' ? 'active' : '' ?>">
+                <a href="/customer/orders" class="sidebar-link block px-4 py-3 rounded-lg <?= $isActive('customer/orders') ? 'active' : '' ?>">
                     <span class="flex items-center">
                         <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
@@ -147,7 +151,7 @@
                         Riwayat Pesanan
                     </span>
                 </a>
-                <a href="/customer/profile" class="sidebar-link block px-4 py-3 rounded-lg <?= uri_string() === '/customer/profile' ? 'active' : '' ?>">
+                <a href="/customer/profile" class="sidebar-link block px-4 py-3 rounded-lg <?= $isActive('customer/profile') ? 'active' : '' ?>">
                     <span class="flex items-center">
                         <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>

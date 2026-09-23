@@ -146,8 +146,32 @@ class OrderModel extends Model
     }
 
     /**
-     * Confirm weight and recalculate price
+     * Single source of truth: jumlah yang harus ditagihkan ke pelanggan.
+     * Prioritas: confirmed_price (sudah termasuk koreksi berat & diskon)
+     *            > final_price (estimasi setelah diskon)
+     *            > total_price (subtotal sebelum diskon)
      */
+    public static function billableAmount(array $order): float
+    {
+        if (isset($order['confirmed_price']) && $order['confirmed_price'] !== null && $order['confirmed_price'] !== '') {
+            return (float) $order['confirmed_price'];
+        }
+
+        if (isset($order['final_price']) && $order['final_price'] !== null && $order['final_price'] !== '') {
+            return (float) $order['final_price'];
+        }
+
+        return (float) ($order['total_price'] ?? 0);
+    }
+
+    /**
+     * SQL expression for billable amount (pakai di SUM revenue).
+     */
+    public static function billableSql(string $alias = 'amount'): string
+    {
+        return 'COALESCE(confirmed_price, final_price, total_price) as ' . $alias;
+    }
+
     public function confirmWeight(int $orderId, float $confirmedWeight, float $confirmedPrice): bool
     {
         return $this->update($orderId, [
@@ -173,14 +197,16 @@ class OrderModel extends Model
 
     public function getTodayOrders()
     {
-        return $this->where('DATE(created_at)', date('Y-m-d'))
-                    ->orderBy('created_at', 'DESC')
+        return $this->select('orders.*, users.name as user_name')
+                    ->join('users', 'users.id = orders.user_id', 'left')
+                    ->where('DATE(orders.created_at)', date('Y-m-d'))
+                    ->orderBy('orders.created_at', 'DESC')
                     ->findAll();
     }
 
     public function getTodayRevenue()
     {
-        return $this->select('SUM(total_price) as revenue')
+        return $this->select('COALESCE(confirmed_price, final_price, total_price) as revenue')
                      ->where('DATE(created_at)', date('Y-m-d'))
                      ->where('status', 'completed')
                      ->first();
@@ -217,7 +243,7 @@ class OrderModel extends Model
     public function getRevenueChart(int $days = 30): array
     {
         $builder = $this->db->table('orders');
-        $builder->select('DATE(created_at) as date, SUM(total_price) as revenue, COUNT(*) as orders');
+        $builder->select('DATE(created_at) as date, SUM(COALESCE(confirmed_price, final_price, total_price)) as revenue, COUNT(*) as orders');
         $builder->where('status', 'completed');
         $builder->where('created_at >=', date('Y-m-d', strtotime("-{$days} days")));
         $builder->groupBy('DATE(created_at)');
@@ -231,7 +257,7 @@ class OrderModel extends Model
     public function getMonthlyRevenue(int $months = 12): array
     {
         $builder = $this->db->table('orders');
-        $builder->select('DATE_FORMAT(created_at, "%Y-%m") as month, SUM(total_price) as revenue, COUNT(*) as orders');
+        $builder->select('DATE_FORMAT(created_at, "%Y-%m") as month, SUM(COALESCE(confirmed_price, final_price, total_price)) as revenue, COUNT(*) as orders');
         $builder->where('status', 'completed');
         $builder->where('created_at >=', date('Y-m-01', strtotime("-{$months} months")));
         $builder->groupBy('DATE_FORMAT(created_at, "%Y-%m")');
@@ -242,13 +268,18 @@ class OrderModel extends Model
     /**
      * Get orders for CSV export
      */
-    public function getOrdersForExport(string $startDate, string $endDate): array
+    public function getOrdersForExport(string $startDate, string $endDate, string $status = 'completed'): array
     {
-        return $this->select('orders.*, users.name as user_name, users.phone as user_phone, users.email as user_email')
-                     ->join('users', 'users.id = orders.user_id')
-                     ->where('DATE(orders.created_at) >=', $startDate)
-                     ->where('DATE(orders.created_at) <=', $endDate)
-                     ->orderBy('orders.created_at', 'ASC')
-                     ->findAll();
+        $builder = $this->select('orders.*, users.name as user_name, users.phone as user_phone, users.email as user_email, payments.status as payment_status, payments.payment_method as payment_method')
+            ->join('users', 'users.id = orders.user_id')
+            ->join('payments', 'payments.order_id = orders.id', 'left')
+            ->where('DATE(orders.created_at) >=', $startDate)
+            ->where('DATE(orders.created_at) <=', $endDate);
+
+        if ($status !== '' && $status !== 'all') {
+            $builder->where('orders.status', $status);
+        }
+
+        return $builder->orderBy('orders.created_at', 'ASC')->findAll();
     }
 }

@@ -61,22 +61,31 @@ class AdminPayment extends BaseController
             return redirect()->to('/admin/orders')->with('error', 'Pesanan tidak ditemukan');
         }
 
+        if ($order['status'] === 'cancelled') {
+            return redirect()->back()->with('error', 'Pesanan dibatalkan');
+        }
+
         $paymentMethod = $this->request->getPost('payment_method');
 
-        if (!in_array($paymentMethod, ['cash', 'qris'])) {
+        if (!in_array($paymentMethod, ['cash', 'qris'], true)) {
             return redirect()->back()->with('error', 'Metode pembayaran tidak valid');
         }
 
+        $amount = \App\Models\OrderModel::billableAmount($order);
+        $existingPayment = $this->paymentModel->getPaymentByOrder($orderId);
+
+        if ($existingPayment && ($existingPayment['status'] ?? '') === 'paid') {
+            return redirect()->back()->with('error', 'Pembayaran sudah lunas — tidak bisa override metode');
+        }
+
+        // Samakan dengan customer: cash & qris sama-sama pending sampai Tandai Lunas.
         $paymentData = [
             'order_id' => $orderId,
-            'amount' => $order['total_price'],
+            'amount' => $amount,
             'payment_method' => $paymentMethod,
-            'payment_date' => date('Y-m-d H:i:s'),
-            'status' => $paymentMethod === 'cash' ? 'paid' : 'pending',
+            'status' => 'pending',
+            'payment_date' => null,
         ];
-
-        // Check if payment already exists
-        $existingPayment = $this->paymentModel->getPaymentByOrder($orderId);
 
         if ($existingPayment) {
             $this->paymentModel->update($existingPayment['id'], $paymentData);
@@ -84,11 +93,43 @@ class AdminPayment extends BaseController
             $this->paymentModel->insert($paymentData);
         }
 
-        // Update order status if cash payment
-        if ($paymentMethod === 'cash') {
-            $this->orderModel->update($orderId, ['status' => 'completed']);
+        // Status order TIDAK diubah otomatis — dikelola lewat menu Update Status.
+        $msg = $paymentMethod === 'cash'
+            ? 'Metode cash disimpan. Tandai lunas saat uang diterima.'
+            : 'Metode QRIS disimpan. Tandai lunas setelah dana diterima.';
+
+        return redirect()->to('/admin/orders/' . $orderId . '/payment')->with('success', $msg);
+    }
+
+    public function markPaid($orderId)
+    {
+        $order = $this->orderModel->find($orderId);
+
+        if (!$order) {
+            return redirect()->to('/admin/orders')->with('error', 'Pesanan tidak ditemukan');
         }
 
-        return redirect()->to('/admin/orders/' . $orderId . '/payment')->with('success', 'Pembayaran berhasil diproses');
+        if ($order['status'] === 'cancelled') {
+            return redirect()->back()->with('error', 'Pesanan dibatalkan');
+        }
+
+        $payment = $this->paymentModel->getPaymentByOrder($orderId);
+
+        if (!$payment) {
+            return redirect()->back()->with('error', 'Belum ada metode pembayaran. Pilih cash atau QRIS dulu.');
+        }
+
+        if ($payment['status'] === 'paid') {
+            return redirect()->back()->with('error', 'Pembayaran sudah lunas');
+        }
+
+        $this->paymentModel->update($payment['id'], [
+            'amount' => \App\Models\OrderModel::billableAmount($order),
+            'status' => 'paid',
+            'payment_date' => date('Y-m-d H:i:s'),
+        ]);
+
+        return redirect()->to('/admin/orders/' . $orderId . '/payment')
+            ->with('success', 'Pembayaran ditandai lunas');
     }
 }

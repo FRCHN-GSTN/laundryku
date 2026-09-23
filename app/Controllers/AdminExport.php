@@ -47,10 +47,19 @@ class AdminExport extends BaseController
                 $order['confirmed_weight'] ?? $order['total_weight'] ?? '-',
                 number_format($order['total_price'], 0, ',', '.'),
                 number_format($order['discount_amount'] ?? 0, 0, ',', '.'),
-                number_format($order['confirmed_price'] ?? $order['total_price'], 0, ',', '.'),
+                number_format(\App\Models\OrderModel::billableAmount($order), 0, ',', '.'),
                 $order['status'],
-                '-',
-                '-',
+                (function () use ($order) {
+                    if (($order['payment_status'] ?? '') === 'paid') {
+                        return 'Lunas';
+                    }
+                    if (! empty($order['payment_status'])) {
+                        return ($order['payment_method'] ?? '') === 'cash' ? 'Bayar di Tempat' : 'Menunggu Verifikasi';
+                    }
+
+                    return 'Belum dipilih';
+                })(),
+                strtoupper($order['payment_method'] ?? '') ?: '-',
             ]);
         }
 

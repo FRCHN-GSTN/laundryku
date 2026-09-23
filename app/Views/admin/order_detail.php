@@ -71,15 +71,16 @@
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm text-gray-400 mb-1">Berat Aktual (kg) *</label>
-                                <input type="number" name="confirmed_weight" step="0.1" min="0.1"
+                                <input type="number" name="confirmed_weight" id="confirmedWeight" step="0.1" min="0.1"
                                        value="<?= esc($order['confirmed_weight'] ?? $order['total_weight'] ?? '', 'attr') ?>"
                                        class="input-field w-full px-4 py-2.5 rounded-lg text-white" required>
                             </div>
                             <div>
                                 <label class="block text-sm text-gray-400 mb-1">Harga Final (Rp) *</label>
-                                <input type="number" name="confirmed_price" min="0"
-                                       value="<?= esc($order['confirmed_price'] ?? $order['total_price'] ?? '', 'attr') ?>"
+                                <input type="number" name="confirmed_price" id="confirmedPrice" min="0"
+                                       value="<?= esc($order['confirmed_price'] ?? $order['final_price'] ?? $order['total_price'] ?? '', 'attr') ?>"
                                        class="input-field w-full px-4 py-2.5 rounded-lg text-white" required>
+                                <p class="text-xs text-gray-500 mt-1">Otomatis terhitung dari berat (setelah diskon, bisa diedit manual)</p>
                             </div>
                         </div>
                         <button type="submit" class="btn-primary px-6 py-2.5 rounded-lg text-sm font-semibold text-white">
@@ -87,23 +88,99 @@
                         </button>
                     </form>
                 </div>
+                <script>
+                (function () {
+                    const items = <?= json_encode(array_map(static fn ($item) => [
+                        'unit'      => $item['unit'] ?? '',
+                        'quantity'  => (float) $item['quantity'],
+                        'subtotal'  => (float) $item['subtotal'],
+                    ], $items)) ?>;
+                    const weightInput = document.getElementById('confirmedWeight');
+                    const priceInput = document.getElementById('confirmedPrice');
+                    const totalWeight = <?= (float) ($order['total_weight'] ?? 0) ?>;
+                    const totalPrice = <?= (float) $order['total_price'] ?>;
+                    const discount = <?= max(0, (float) ($order['discount_amount'] ?? 0)) ?>;
+
+                    function calcPrice(weight) {
+                        let weightPart = 0;
+                        let fixedPart = 0;
+                        let estWeight = 0;
+
+                        items.forEach(function (item) {
+                            if (item.unit === 'kg') {
+                                weightPart += item.subtotal;
+                                estWeight += item.quantity;
+                            } else {
+                                fixedPart += item.subtotal;
+                            }
+                        });
+
+                        if (estWeight <= 0 && totalWeight > 0) {
+                            estWeight = totalWeight;
+                            weightPart = totalPrice;
+                        }
+
+                        let gross;
+                        if (estWeight > 0 && weight > 0) {
+                            gross = Math.round(weightPart * (weight / estWeight) + fixedPart);
+                        } else {
+                            gross = Math.round(totalPrice);
+                        }
+
+                        return Math.max(0, gross - discount);
+                    }
+
+                    weightInput.addEventListener('input', function () {
+                        const weight = parseFloat(this.value);
+                        if (!isNaN(weight) && weight > 0) {
+                            priceInput.value = calcPrice(weight);
+                        }
+                    });
+                })();
+                </script>
             <?php endif; ?>
 
             <!-- Payment -->
+            <?php $paymentInfo = $payment ?? null; ?>
             <div class="card rounded-lg p-6">
                 <div class="flex items-center justify-between mb-4">
                     <h4 class="text-lg font-semibold">Pembayaran</h4>
-                    <a href="/admin/orders/<?= $order['id'] ?>/payment" class="text-primary hover:underline text-sm">
-                        Proses Pembayaran →
-                    </a>
+                    <div class="flex items-center gap-2">
+                        <?php if (($paymentInfo['status'] ?? '') === 'paid'): ?>
+                            <span class="status-badge bg-green-500/20 text-green-400">Lunas</span>
+                        <?php elseif (($paymentInfo['payment_method'] ?? '') === 'cash' && $paymentInfo): ?>
+                            <span class="status-badge bg-amber-500/20 text-amber-400">Bayar di Tempat</span>
+                        <?php elseif ($paymentInfo): ?>
+                            <span class="status-badge bg-amber-500/20 text-amber-400">Menunggu Verifikasi</span>
+                        <?php else: ?>
+                            <span class="status-badge bg-gray-500/20 text-gray-400">Belum dipilih</span>
+                        <?php endif; ?>
+                        <?php if ($order['status'] !== 'cancelled'): ?>
+                            <a href="/admin/orders/<?= $order['id'] ?>/payment" class="text-primary hover:underline text-sm">
+                                <?php if (($paymentInfo['status'] ?? '') === 'paid'): ?>
+                                    Lihat Pembayaran →
+                                <?php elseif ($paymentInfo): ?>
+                                    Verifikasi Pembayaran →
+                                <?php else: ?>
+                                    Atur Pembayaran →
+                                <?php endif; ?>
+                            </a>
+                        <?php endif; ?>
+                    </div>
                 </div>
                 <div class="space-y-3">
                     <div class="flex justify-between">
                         <span class="text-gray-400">Total Tagihan</span>
                         <span class="font-bold text-primary text-lg">
-                            Rp <?= number_format($order['confirmed_price'] ?? $order['total_price'], 0, ',', '.') ?>
+                            Rp <?= number_format(\App\Models\OrderModel::billableAmount($order), 0, ',', '.') ?>
                         </span>
                     </div>
+                    <?php if (($order['discount_amount'] ?? 0) > 0): ?>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-green-400">Diskon promo</span>
+                            <span class="text-green-400">- Rp <?= number_format($order['discount_amount'], 0, ',', '.') ?></span>
+                        </div>
+                    <?php endif; ?>
                     <?php if ($order['confirmed_price'] && $order['confirmed_price'] != $order['total_price']): ?>
                         <div class="flex justify-between text-sm">
                             <span class="text-gray-500">Estimasi awal</span>
@@ -178,7 +255,7 @@
                     <div class="flex justify-between items-center">
                         <span class="text-lg font-semibold">Total Bayar</span>
                         <span class="text-2xl font-bold text-primary">
-                            Rp <?= number_format($order['confirmed_price'] ?? $order['total_price'], 0, ',', '.') ?>
+                            Rp <?= number_format(\App\Models\OrderModel::billableAmount($order), 0, ',', '.') ?>
                         </span>
                     </div>
                 </div>
